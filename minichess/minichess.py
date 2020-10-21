@@ -1,6 +1,9 @@
+from minichess.state import MiniChessState
+from minichess.rules import MiniChessRuleset
+
 class MiniChess:
-    def __init__(self, x):
-        pass
+    def __init__(self, rules: MiniChessRuleset = None):
+        self.state = MiniChessState(rules)
 
     @staticmethod
     def init_from_rules(rules):
@@ -11,7 +14,7 @@ class MiniChess:
             rules :: MiniChessRuleset : The rules that this environment
                 exists under.
         '''
-        pass
+        return MiniChess(rules)
 
     def current_state(self):
         """
@@ -23,7 +26,7 @@ class MiniChess:
             np array of shape (25, 6) representing the current state of the
             board
         """
-        raise NotImplementedError
+        return self.state
 
     def immediate_states(self):
         """
@@ -31,6 +34,5 @@ class MiniChess:
         """
         raise NotImplementedError
 
-class MiniChessState:
-    def __init__(self, rules):
-        pass
+    def display_ascii(self):
+        print(str(self.state))

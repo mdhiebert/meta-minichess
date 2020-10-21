@@ -1,4 +1,3 @@
-from minichess.state import MiniChessState
 from typing import List
 import enum
 
@@ -27,7 +26,7 @@ class Piece:
         self.points = points
         self.max_move_range = max_move_range
 
-    def possible_moves(self, board: MiniChessState) -> List[MiniChessMove]:
+    def possible_moves(self, board) -> List:
         '''
             Given a board state, return all possible moves this piece can make.
 
@@ -40,9 +39,71 @@ class Piece:
             list of MiniChessMove representing all possible moves this piece can
             make
         '''
-        raise NotImplementedError
+        raise NotImplementedError # TODO
 
 # Specific Piece Definitions
+
+# each piece has movement_lock
+
+class Pawn(Piece):
+    def __init__(self, _id, color, points, max_move_range):
+        super().__init__(_id, color, points, max_move_range)
+
+    def possible_moves(self, board) -> List:
+        pass # TODO
+
+    def __str__(self):
+        return '♙' if self.color == PieceColor.WHITE else '♟︎'
+
+class Knight(Piece):
+    def __init__(self, _id, color, points, max_move_range):
+        super().__init__(_id, color, points, max_move_range)
+
+    def possible_moves(self, board) -> List:
+        pass # TODO
+
+    def __str__(self):
+        return '♘' if self.color == PieceColor.WHITE else '♞'
+
+class Bishop(Piece):
+    def __init__(self, _id, color, points, max_move_range):
+        super().__init__(_id, color, points, max_move_range)
+
+    def possible_moves(self, board) -> List:
+        pass # TODO
+
+    def __str__(self):
+        return '♗' if self.color == PieceColor.WHITE else '♝'
+
+class Rook(Piece):
+    def __init__(self, _id, color, points, max_move_range):
+        super().__init__(_id, color, points, max_move_range)
+
+    def possible_moves(self, board) -> List:
+        pass # TODO
+
+    def __str__(self):
+        return '♖' if self.color == PieceColor.WHITE else '♜'
+
+class Queen(Piece):
+    def __init__(self, _id, color, points, max_move_range):
+        super().__init__(_id, color, points, max_move_range)
+
+    def possible_moves(self, board) -> List:
+        pass # TODO
+
+    def __str__(self):
+        return '♕' if self.color == PieceColor.WHITE else '♛'
+
+class King(Piece):
+    def __init__(self, _id, color, points, max_move_range):
+        super().__init__(_id, color, points, max_move_range)
+
+    def possible_moves(self, board) -> List:
+        pass # TODO
+
+    def __str__(self):
+        return '♔' if self.color == PieceColor.WHITE else '♚'
 
 # Piece Actions
 
