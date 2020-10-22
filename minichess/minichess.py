@@ -1,9 +1,11 @@
 from minichess.state import MiniChessState
+from minichess.pieces import PieceColor
 from minichess.rules import MiniChessRuleset
 
 class MiniChess:
-    def __init__(self, rules: MiniChessRuleset = None):
+    def __init__(self, rules: MiniChessRuleset = None, active_color = PieceColor.WHITE):
         self.state = MiniChessState(rules)
+        self.active_color = active_color
 
     @staticmethod
     def init_from_rules(rules):
@@ -32,7 +34,7 @@ class MiniChess:
         """
             Returns all possible next states given the current state.
         """
-        raise NotImplementedError
+        return self.state.possible_next_states(self.active_color)
 
     def display_ascii(self):
         print(str(self.state))

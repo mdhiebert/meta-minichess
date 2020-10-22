@@ -1,5 +1,6 @@
 from learning.model import MiniChessModel
 from minichess.minichess import MiniChess
+from minichess.rules import MiniChessRuleset
 
 if __name__ == "__main__":
 

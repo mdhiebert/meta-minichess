@@ -1,5 +1,5 @@
 import numpy as np
-from minichess.pieces import Piece, Pawn, Knight, Bishop, Rook, Queen, King, PieceColor
+from minichess.pieces import Piece, Pawn, Knight, Bishop, Rook, Queen, King, PieceColor, MiniChessMove
 from typing import List
 from minichess.rules import MiniChessRuleset
 
@@ -26,10 +26,16 @@ DEFAULT_RULES = MiniChessRuleset()
 # [05] [06] [07] [08] [09]    [♖] [♘] [♗] [♕] [♔]
 #                        WHITE
 
+# TODO add some sort of check for checkmate / stalemate / terminal condition
+
 class MiniChessState:
-    def __init__(self, rules: MiniChessRuleset = None):
-        self.board = self._init_board()
-        self._populate_board(rules)
+    def __init__(self, rules: MiniChessRuleset = None, board = None):
+        self.rules = rules
+        if board == None:
+            self.board = self._init_board() 
+            self._populate_board(rules)
+        else:
+            self.board = board
 
     def _init_board(self) -> List[List]:
         '''
@@ -47,18 +53,18 @@ class MiniChessState:
         '''
             Put the pieces on the board.
         '''
+        if rules is None: self.rules = DEFAULT_RULES
+
         self._populate_board_for_color(rules, PieceColor.WHITE)
         self._populate_board_for_color(rules, PieceColor.BLACK)
 
     def _populate_board_for_color(self, rules: MiniChessRuleset, color: PieceColor):
-        if rules is None: rules = DEFAULT_RULES
-
-        pawn_ml, pawn_v = rules.pawn_rules()
-        knight_ml, knight_v = rules.knight_rules()
-        bishop_ml, bishop_v = rules.bishop_rules()
-        rook_ml, rook_v = rules.rook_rules()
-        queen_ml, queen_v = rules.queen_rules()
-        king_ml, king_v = rules.king_rules()
+        pawn_ml, pawn_v = self.rules.pawn_rules()
+        knight_ml, knight_v = self.rules.knight_rules()
+        bishop_ml, bishop_v = self.rules.bishop_rules()
+        rook_ml, rook_v = self.rules.rook_rules()
+        queen_ml, queen_v = self.rules.queen_rules()
+        king_ml, king_v = self.rules.king_rules()
         
         # pawns
         pawn_row = BOARD_HEIGHT - 2 if color == PieceColor.WHITE else 1
@@ -89,9 +95,86 @@ class MiniChessState:
             King(9 if color == PieceColor.WHITE else 19, color, king_v, king_ml)
         )
 
+    def copy_board(self):
+        '''
+        Returns
+        -------
+        A deep copy of the current board.
+        '''
+        new_board = []
+        for row in range(BOARD_HEIGHT):
+            new_board.append(list())
+            for col in range(BOARD_WIDTH):
+                new_board[row].append(self.board[row][col].copy())
+        
+        return new_board
 
-    def find_piece(self, piece):
-        pass # TODO
+    def apply_move(self, move: MiniChessMove):
+        new_board = self.copy_board()
+
+        frm,to = move.frm,move.to
+        row_frm,col_frm = frm
+        row_to,col_to = to
+
+        # pick up our piece
+        moving_piece = new_board[row_frm][col_frm].remove_piece()
+
+        # capture enemy piece (if applicable)
+        discard_piece = new_board[row_to][col_to].remove_piece() if move.is_capture else None
+
+        # place our piece
+        new_board[row_to][col_to].add_piece(moving_piece)
+
+        # TODO some sort of logging / history process?
+
+        return MiniChessState(rules = self.rules, board = new_board)
+
+    def find_piece(self, piece: Piece) -> tuple:
+        '''
+            Finds a specific piece and returns its coordinates on the board,
+            returns (-1,-1) if piece has been removed.
+
+            Parameters
+            ----------
+            piece :: Piece: The MiniChess piece to search for
+
+            Returns
+            -------
+            a tuple of ints y,x corresponding to the row and the column, respectively, 
+            that this piece occupies. returns (-1, -1) if not found.
+        '''
+        for row in range(BOARD_HEIGHT):
+            for col in range(BOARD_WIDTH):
+                tile = self.board[row][col]
+
+                if piece == tile.piece: return (row, col)
+        
+        return (-1, -1)
+
+    def possible_next_states(self, for_color: PieceColor) -> list:
+        '''
+            Given a color, return a list of all possible next states for that color.
+
+            Parameters
+            ----------
+            for_color :: PieceColor : the color able to move in this state
+
+            Returns
+            -------
+            A list of MiniChessState, with each state representing a possible next state of the current state
+        '''
+
+        move_list = []
+
+        # gather up all possible moves
+        for row in self.board:
+            for tile in row:
+                if tile.occupied() and tile.piece.color == for_color: # there is a piece here of correct color
+                    move_list.extend(tile.piece.possible_moves(self))
+
+        next_states = [self.apply_move(move) for move in move_list]
+
+        return next_states
 
     def __str__(self):
         s = ''
@@ -145,8 +228,14 @@ class MiniChessTile:
         '''
             Adds a piece to this tile.
         '''
-
+        if not issubclass(type(piece), Piece): raise RuntimeError('Cannot place object of type {} on a MiniChessTile'.format(type(piece)))
         self.piece = piece
+
+    def copy(self):
+        """
+            Returns a copy of this piece.
+        """
+        return MiniChessTile(piece=None if self.piece == None else self.piece.copy())
 
     def __str__(self):
         piece_str = str(self.piece) if self.occupied() else ' '
