@@ -40,7 +40,7 @@ class MiniChessRuleset:
         self.king_value = king_value
         self.queen_value = queen_value
 
-    # @staticmethod # TODO this should be static? or maybe not
+    @staticmethod # TODO this should be static? or maybe not -> ya!
     def from_vector(self, vector: np.array):
         '''
             Create a MiniChessRuleset from a vector of form:
