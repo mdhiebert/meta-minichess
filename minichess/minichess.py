@@ -1,11 +1,25 @@
 from minichess.state import MiniChessState
 from minichess.pieces import PieceColor
 from minichess.rules import MiniChessRuleset
+import enum
+import random
+
+TURN_CUTOFF = 100
+
+class TerminalStatus(enum.Enum):
+    ONGOING = 0
+    WHITE_WIN = 1
+    BLACK_WIN = 2
+    DRAW = 3
 
 class MiniChess:
     def __init__(self, rules: MiniChessRuleset = None, active_color = PieceColor.WHITE):
         self.state = MiniChessState(rules)
         self.active_color = active_color
+
+        self.turn_counter = 0
+
+        self.terminal = False
 
     @staticmethod
     def init_from_rules(rules):
@@ -30,11 +44,55 @@ class MiniChess:
         """
         return self.state
 
-    def immediate_states(self):
+    def immediate_states(self) -> list:
         """
             Returns all possible next states given the current state.
         """
-        return self.state.possible_next_states(self.active_color)
+
+        # TODO can't move to be in check
+        # endgame logic
+
+        next_states = self.state.possible_next_states(self.active_color)
+
+        filtered_states = filter(lambda state: not state.in_check(self.active_color), next_states)
+
+        return list(filtered_states)
+
+    def terminal_status(self):
+        """
+            Returns the status of this game.
+        """
+
+        if self.turn_counter > TURN_CUTOFF: return TerminalStatus.DRAW
+
+        if self.state.in_check(self.active_color): # this player is in check
+            if len(self.immediate_states()) == 0:
+                return TerminalStatus.WHITE_WIN if self.active_color == PieceColor.BLACK else TerminalStatus.BLACK_WIN
+            else:
+                return TerminalStatus.ONGOING
+        else:
+            if len(self.immediate_states()) == 0: # not in check but can't move
+                return TerminalStatus.DRAW
+            else:
+                return TerminalStatus.ONGOING
+
+    def play_random(self):
+        while self.terminal_status() == TerminalStatus.ONGOING:
+            self.display_ascii()
+            print('+-------------+')
+            
+            candidates = self.immediate_states()
+            choice = random.randint(0, len(candidates) - 1)
+
+            self.state = candidates[choice]
+
+            self.turn_counter += 1
+
+            self.active_color = PieceColor.invert(self.active_color)
+
+        self.display_ascii()
+        print('+-------------+')
+        print(self.terminal_status().name)
 
     def display_ascii(self):
         print(str(self.state))

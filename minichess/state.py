@@ -176,6 +176,33 @@ class MiniChessState:
 
         return next_states
 
+    def in_check(self, for_color: PieceColor) -> bool:
+        '''
+            # TODO this is probably not the most efficient, but it is easy to understand -> maybe refactor if training is slow?
+
+            Parameters
+            ----------
+            for_color :: PieceColor : the color of the king to check if in check
+
+            Returns
+            -------
+            True if `for_color`'s king is in check, False otherwise
+        '''
+        next_states = self.possible_next_states(PieceColor.invert(for_color)) # get all possible next states for opponent
+
+        filtered_states = []
+
+        king_id = 9 if for_color == PieceColor.WHITE else 19
+        dummy_king = King(king_id, for_color, 0, 0)
+
+
+        # check to see if the king of this piece is in ALL next states (i.e. can't be captured next move)
+        for state in next_states:
+            found_king = state.find_piece(dummy_king)
+            if found_king != (-1, -1): filtered_states.append(state)
+
+        return len(next_states) != len(filtered_states)
+
     def __str__(self):
         s = ''
 

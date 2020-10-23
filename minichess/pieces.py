@@ -7,6 +7,10 @@ class PieceColor(enum.Enum):
     WHITE = 0
     BLACK = 1
 
+    @staticmethod
+    def invert(color):
+        return PieceColor.WHITE if color == PieceColor.BLACK else PieceColor.BLACK
+
 class Piece:
     '''
         The abstract data type for a mini chess piece.
@@ -280,13 +284,15 @@ class Bishop(Piece):
                             possible_moves.append(
                                 MiniChessMove((row,col), (new_row,new_col), piece=self)
                             )
+                        else:
+                            collision = True
 
                         if self._valid_move(state, (new_row, new_col), capturing=True):
                             possible_moves.append(
                                 MiniChessMove((row,col), (new_row,new_col), piece=self, is_capture=True)
                             )
 
-                        if state.board[new_row][new_col].occupied(): collision = True
+                            collision = True
 
         return possible_moves
 
@@ -327,13 +333,15 @@ class Rook(Piece):
                         possible_moves.append(
                             MiniChessMove((row,col), (new_row,new_col), piece=self)
                         )
+                    else:
+                        collision = True
 
                     if self._valid_move(state, (new_row, new_col), capturing=True):
                         possible_moves.append(
                             MiniChessMove((row,col), (new_row,new_col), piece=self, is_capture=True)
                         )
 
-                    if state.board[new_row][new_col].occupied(): collision = True
+                        collision = True
         
         return possible_moves
 
@@ -376,13 +384,15 @@ class Queen(Piece):
                         possible_moves.append(
                             MiniChessMove((row,col), (new_row,new_col), piece=self)
                         )
+                    else:
+                        collision = True
 
                     if self._valid_move(state, (new_row, new_col), capturing=True):
                         possible_moves.append(
                             MiniChessMove((row,col), (new_row,new_col), piece=self, is_capture=True)
                         )
 
-                    if state.board[new_row][new_col].occupied(): collision = True
+                        collision = True
 
         directions = [1, -1]
         
@@ -400,13 +410,14 @@ class Queen(Piece):
                             possible_moves.append(
                                 MiniChessMove((row,col), (new_row,new_col), piece=self)
                             )
+                        else:
+                            collision = True
 
                         if self._valid_move(state, (new_row, new_col), capturing=True):
                             possible_moves.append(
                                 MiniChessMove((row,col), (new_row,new_col), piece=self, is_capture=True)
                             )
-
-                        if state.board[new_row][new_col].occupied(): collision = True
+                            collision = True
         
         return possible_moves
 
