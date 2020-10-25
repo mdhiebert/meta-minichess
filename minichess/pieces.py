@@ -163,13 +163,17 @@ class Pawn(Piece):
                 MiniChessMove((row,col), forward_one, piece=self)
             )
 
-        if row == back_row + direction: # we are a pawn in our starting row
-            # move forward two
-            forward_two = (row + 2*direction, col)
-            if self._valid_move(state, forward_two, capturing=False):
-                possible_moves.append(
-                    MiniChessMove((row,col), forward_two, piece=self)
-                )
+            # can't move forward 2 without being able to move forward 1
+
+            # TODO maybe get rid of this
+
+            if row == back_row + direction: # we are a pawn in our starting row
+                # move forward two
+                forward_two = (row + 2*direction, col)
+                if self._valid_move(state, forward_two, capturing=False):
+                    possible_moves.append(
+                        MiniChessMove((row,col), forward_two, piece=self)
+                    )
 
         # top left capture
         top_left_capture = (row + direction, col + direction)
@@ -510,4 +514,7 @@ class MiniChessMove:
             raise NotImplementedError
 
         raise NotImplementedError
+
+    def __eq__(self, other):
+        return type(other) == type(self) and self.frm == other.frm and self.to == other.to
 
