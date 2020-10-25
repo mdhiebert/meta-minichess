@@ -70,12 +70,12 @@ class MiniChessRuleset:
         ]
 
         v_cycle = [
-            PAWN_MOVE_LIMIT,
-            KNIGHT_MOVE_LIMIT,
-            BISHOP_MOVE_LIMIT,
-            ROOK_MOVE_LIMIT,
-            KING_MOVE_LIMIT,
-            QUEEN_MOVE_LIMIT
+            PAWN_VALUE,
+            KNIGHT_VALUE,
+            BISHOP_VALUE,
+            ROOK_VALUE,
+            KING_VALUE,
+            QUEEN_VALUE
         ]
 
         if vector.shape == (6,): # just move limits
