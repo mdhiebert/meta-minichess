@@ -66,11 +66,10 @@ class Piece:
             Returns
             -------
             numpy array representing the vector encoding of this piece:
-                ID +
                 COLOR (0 for white, 1 for black) +
                 ONEHOT
         '''
-        return np.array([self.id, self.color.value] + self._onehot())
+        return np.array([self.color.value] + self._onehot())
 
     @staticmethod
     def from_vector(vector: np.array):
@@ -132,8 +131,33 @@ class Piece:
         '''
         raise NotImplementedError
 
+    def invert(self):
+        '''
+            Returns a deep copy of this Piece, but of opposite color.
+
+            Returns
+            -------
+            Piece that is equal to this piece in every way except for color, which is opposite of its original value.
+        '''
+
+        return type(self)(self.id, PieceColor.invert(self.color), self.points, self.max_move_range)
+
+    def value(self):
+        '''
+            Returns
+            -------
+            The point value of this piece.
+        '''
+
+        modifier = -2 * self.color.value + 1
+
+        return modifier * self.points
+
     def __eq__(self, other):
         return type(self) == type(other) and self.color == other.color and self.id == other.id
+
+    def __hash__(self):
+        return hash((self.id, str(self)))
 
 # Specific Piece Definitions
 

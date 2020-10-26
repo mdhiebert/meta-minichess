@@ -1,6 +1,7 @@
 from minichess.state import MiniChessState
 from minichess.pieces import PieceColor
 from minichess.rules import MiniChessRuleset
+from learning.action import MiniChessAction
 import enum
 import random
 
@@ -75,6 +76,18 @@ class MiniChess:
                 return TerminalStatus.DRAW # stalemate
             else:
                 return TerminalStatus.ONGOING # keep playing
+
+    def apply_action(self, action: MiniChessAction):
+        '''
+            TODO write docstring
+        '''
+        self.state = self.state.apply_move(action.to_minichess_move(self.state))
+        
+        self.state = self.state.rotate_invert()
+
+        self.turn_counter += 1
+
+        self.active_color = PieceColor.invert(self.active_color)
 
     def play_random(self):
         """

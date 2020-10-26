@@ -1,6 +1,7 @@
 import enum
 from minichess.pieces import Piece, PieceColor, Pawn, Knight, Bishop, Rook, King, Queen, MiniChessMove
 from minichess.state import MiniChessState
+from learning.utils import one_hot
 import numpy as np
 
 class ActionType(enum.Enum):
@@ -26,12 +27,12 @@ PIECE_DICT = {
         9: (King, 9)
     },
     PieceColor.BLACK: {
-        0: (Pawn, 10),
-        1: (Pawn, 11),
-        2: (Pawn, 12),
-        3: (Pawn, 13),
-        4: (Pawn, 14),
-        5: (Rook, 15),
+        0: (Pawn, 15),
+        1: (Pawn, 14),
+        2: (Pawn, 13),
+        3: (Pawn, 12),
+        4: (Pawn, 11),
+        5: (Rook, 10),
         6: (Knight, 16),
         7: (Bishop, 17),
         8: (Queen, 18),
@@ -102,14 +103,83 @@ class MiniChessAction:
             -------
             A new `MiniChessAction` object representing the input vectors.
         '''
-        constructor, _id = PIECE_DICT[np.argmax(piece_vector)] # get the constructor method and id based off of model predictions
-        dummy_piece = constructor(_id, color)
+        constructor, _id = PIECE_DICT[color][np.argmax(piece_vector)] # get the constructor method and id based off of model predictions
+        dummy_piece = constructor(_id, color, 0, 0)
         
         _type = TYPE_DICT[np.argmax(type_vector)]
         
         magnitude = MAG_DICT[np.argmax(mag_vector)]
 
         return MiniChessAction(dummy_piece, _type, magnitude)
+
+    @staticmethod
+    def from_move(move: MiniChessMove):
+        '''
+            Static Constructor for `MiniChessAction` from `MiniChessMove`
+
+            Parameters
+            ----------
+            move :: MiniChessMove : the move to base our action off of
+
+            Returns
+            -------
+            A new `MiniChessAction` object representing the same abstract move as `move`.
+        '''
+        row_delta, col_delta = move.frm[0] - move.to[0], move.frm[1] - move.to[1]
+
+        if row_delta == col_delta:
+
+            if row_delta == 0: raise RuntimeError('Cannot convert move where piece remains in place to MiniChessAction')
+
+            row_sign = row_delta // abs(row_delta)
+            col_sign = col_delta // abs(col_delta)
+
+            if row_sign == col_sign:
+                return MiniChessAction(move.piece, ActionType.MINOR_DIAG, row_delta)
+            else:
+                return MiniChessAction(move.piece, ActionType.MAJOR_DIAG, row_delta)
+        elif row_delta == 0 and col_delta != 0:
+            return MiniChessAction(move.piece, ActionType.HORIZONTAL, col_delta)
+        elif row_delta != 0 and col_delta == 0:
+            return MiniChessAction(move.piece, ActionType.VERTICALLY, row_delta)
+        else:
+            if row_delta == -2 and col_delta == -1:
+                return MiniChessAction(move.piece, ActionType.KNIGHTWISE, -4)
+            elif row_delta == -1 and col_delta == -2:
+                return MiniChessAction(move.piece, ActionType.KNIGHTWISE, -3)
+            elif row_delta == 1 and col_delta == -2:
+                return MiniChessAction(move.piece, ActionType.KNIGHTWISE, -2)
+            elif row_delta == 2 and col_delta == -1:
+                return MiniChessAction(move.piece, ActionType.KNIGHTWISE, -1)
+            elif row_delta == 2 and col_delta == 1:
+                return MiniChessAction(move.piece, ActionType.KNIGHTWISE, 1)
+            elif row_delta == 1 and col_delta == 2:
+                return MiniChessAction(move.piece, ActionType.KNIGHTWISE, 2)
+            elif row_delta == -1 and col_delta == 2:
+                return MiniChessAction(move.piece, ActionType.KNIGHTWISE, 3)
+            elif row_delta == -2 and col_delta == 1:
+                return MiniChessAction(move.piece, ActionType.KNIGHTWISE, 4)
+
+        raise RuntimeError('Could not convert MiniChessMove to MiniChessAction')
+
+    def vectors(self):
+        '''
+            Returns
+            -------
+            tuple of `piece_vector`, `type_vector`, `magnitude_vector` where each item is as defined in `from_vectors()`
+        '''
+
+        argmax_to_piece = PIECE_DICT[self.piece.color]
+        piece_to_argmax = {v: k for k, v in argmax_to_piece.items()}
+
+        type_to_argmax = {v: k for k, v in TYPE_DICT.items()}
+
+        magnitude_to_argmax = {v: k for k, v in MAG_DICT.items()}
+
+        return (one_hot(piece_to_argmax[(type(self.piece), self.piece.id)], 10),
+                one_hot(type_to_argmax[self._type], 5),
+                one_hot(magnitude_to_argmax[self.magnitude], 8))
+
 
     def to_minichess_move(self, state: MiniChessState):
         '''
@@ -136,6 +206,10 @@ class MiniChessAction:
         return MiniChessMove((row, col), (new_row, new_col), real_piece)
 
     def _calculate_new_pos(self, row, col, _type, magnitude):
+        '''
+            Helper method to calculate potential new position of this piece
+            following this action.
+        '''
         if _type == ActionType.KNIGHTWISE: # this is a special case
             if magnitude == -4:
                 return row - 2, col - 1
