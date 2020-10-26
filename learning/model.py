@@ -13,10 +13,12 @@ class MiniChessModel(nn.Module):
 
         self.fc1 = nn.Linear(512, 256)
         self.piece_choice = nn.Linear(256, 10)
-        self.type_choice = nn.Linear(256, 15)
+        self.type_choice = nn.Linear(256, 5)
         self.mag_choice = nn.Linear(256, 8)
 
-        self.softmax = nn.Softmax()
+        self.relu = nn.ReLU()
+
+        self.softmax = nn.LogSoftmax(dim=-1)
 
     def forward(self, x):
 
@@ -39,6 +41,7 @@ class MiniChessModel(nn.Module):
         x = x.squeeze().unsqueeze(0)
 
         x = self.fc1(x)
+        x = self.relu(x)
         
         piece = self.piece_choice(x)
         piece = self.softmax(piece).squeeze()

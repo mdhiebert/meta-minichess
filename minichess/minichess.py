@@ -47,7 +47,7 @@ class MiniChess:
         """
         return self.state
 
-    def immediate_states(self) -> list:
+    def immediate_states(self) -> list: # TODO checkmate bugz
         """
             Returns all possible next states given the current state.
         """
@@ -83,7 +83,7 @@ class MiniChess:
         '''
         self.state = self.state.apply_move(action.to_minichess_move(self.state))
         
-        self.state = self.state.rotate_invert()
+        # self.state = self.state.rotate_invert() # TODO is this worth it?
 
         self.turn_counter += 1
 

@@ -153,6 +153,14 @@ class Piece:
 
         return modifier * self.points
 
+    def readable(self):
+        '''
+            Returns
+            -------
+            Human readable string representing this piece.
+        '''
+        return '{}({})'.format(str(type(self)), self.id)
+
     def __eq__(self, other):
         return type(self) == type(other) and self.color == other.color and self.id == other.id
 
@@ -537,7 +545,7 @@ class MiniChessMove:
         if self.is_castle:
             raise NotImplementedError
 
-        raise NotImplementedError
+        return '{} from {} to {}'.format(self.piece.readable(), self.frm, self.to)
 
     def __eq__(self, other):
         return type(other) == type(self) and self.frm == other.frm and self.to == other.to

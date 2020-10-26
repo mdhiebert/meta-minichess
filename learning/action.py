@@ -27,12 +27,12 @@ PIECE_DICT = {
         9: (King, 9)
     },
     PieceColor.BLACK: {
-        0: (Pawn, 15),
-        1: (Pawn, 14),
-        2: (Pawn, 13),
-        3: (Pawn, 12),
-        4: (Pawn, 11),
-        5: (Rook, 10),
+        0: (Pawn, 14),
+        1: (Pawn, 13),
+        2: (Pawn, 12),
+        3: (Pawn, 11),
+        4: (Pawn, 10),
+        5: (Rook, 15),
         6: (Knight, 16),
         7: (Bishop, 17),
         8: (Queen, 18),
@@ -125,9 +125,9 @@ class MiniChessAction:
             -------
             A new `MiniChessAction` object representing the same abstract move as `move`.
         '''
-        row_delta, col_delta = move.frm[0] - move.to[0], move.frm[1] - move.to[1]
+        row_delta, col_delta = move.to[0] - move.frm[0], move.to[1] - move.frm[1]
 
-        if row_delta == col_delta:
+        if abs(row_delta) == abs(col_delta):
 
             if row_delta == 0: raise RuntimeError('Cannot convert move where piece remains in place to MiniChessAction')
 
@@ -135,13 +135,13 @@ class MiniChessAction:
             col_sign = col_delta // abs(col_delta)
 
             if row_sign == col_sign:
-                return MiniChessAction(move.piece, ActionType.MINOR_DIAG, row_delta)
+                return MiniChessAction(move.piece, ActionType.MINOR_DIAG, -1 * row_delta)
             else:
-                return MiniChessAction(move.piece, ActionType.MAJOR_DIAG, row_delta)
+                return MiniChessAction(move.piece, ActionType.MAJOR_DIAG, -1 * row_delta)
         elif row_delta == 0 and col_delta != 0:
             return MiniChessAction(move.piece, ActionType.HORIZONTAL, col_delta)
         elif row_delta != 0 and col_delta == 0:
-            return MiniChessAction(move.piece, ActionType.VERTICALLY, row_delta)
+            return MiniChessAction(move.piece, ActionType.VERTICALLY, -1 * row_delta)
         else:
             if row_delta == -2 and col_delta == -1:
                 return MiniChessAction(move.piece, ActionType.KNIGHTWISE, -4)
@@ -199,7 +199,7 @@ class MiniChessAction:
 
         row,col = found_piece
 
-        real_piece = state.board[row][col]
+        real_piece = state.board[row][col].piece
 
         new_row, new_col = self._calculate_new_pos(row, col, self._type, self.magnitude)
 
@@ -254,9 +254,17 @@ class MiniChessAction:
             -------
             True if this action results in a valid next state (i.e. it can be taken), False otherwise
         '''
+
+        # print(self)
         move = self.to_minichess_move(state)
+        # print('mv', move) # TODO clean up prints
 
-        next_moves = state.possible_next_states(self.piece.color)
-
+        next_moves = state.possible_moves(self.piece.color)
+        # for mv in next_moves:
+        #     print(mv)
+        # print('valid?', move in next_moves)
         return move in next_moves
+
+    def __str__(self):
+        return 'Move {} {} {}'.format(self.piece.readable(), self._type.name, self.magnitude)
 
