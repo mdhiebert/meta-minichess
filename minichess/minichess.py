@@ -54,9 +54,9 @@ class MiniChess:
 
         next_states = self.state.possible_next_states(self.active_color)
 
-        filtered_states = filter(lambda state: not state.in_check(self.active_color), next_states)
+        # filtered_states = filter(lambda state: not state.in_check(self.active_color), next_states)
 
-        return list(filtered_states)
+        return next_states
 
     def terminal_status(self):
         """

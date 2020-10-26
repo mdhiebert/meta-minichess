@@ -151,7 +151,7 @@ class MiniChessState:
         
         return (-1, -1)
 
-    def possible_moves(self, for_color: PieceColor) -> list:
+    def possible_moves(self, for_color: PieceColor, filter_by_check=False) -> list:
         '''
             Given a color, return a list of all possible moves for that color.
 
@@ -171,9 +171,14 @@ class MiniChessState:
                 if tile.occupied() and tile.piece.color == for_color: # there is a piece here of correct color
                     move_list.extend(tile.piece.possible_moves(self))
 
-        return move_list
+        if filter_by_check:
+            filtered_moves = filter(lambda move: not self.apply_move(move).in_check(for_color), move_list)
+        else:
+            filtered_moves = move_list
 
-    def possible_next_states(self, for_color: PieceColor) -> list:
+        return list(filtered_moves)
+
+    def possible_next_states(self, for_color: PieceColor, filter_by_check=True) -> list:
         '''
             Given a color, return a list of all possible next states for that color.
 
@@ -185,9 +190,11 @@ class MiniChessState:
             -------
             A list of MiniChessState, with each state representing a possible next state of the current state
         '''
-        next_states = [self.apply_move(move) for move in self.possible_moves(for_color)]
+        next_states = [self.apply_move(move) for move in self.possible_moves(for_color, filter_by_check=filter_by_check)]
 
-        return next_states
+        # filtered_states = filter(lambda state: not state.in_check(for_color), next_states)
+
+        return list(next_states)
 
     def in_check(self, for_color: PieceColor) -> bool:
         '''
@@ -201,7 +208,7 @@ class MiniChessState:
             -------
             True if `for_color`'s king is in check, False otherwise
         '''
-        next_states = self.possible_next_states(PieceColor.invert(for_color)) # get all possible next states for opponent
+        next_states = self.possible_next_states(PieceColor.invert(for_color), filter_by_check=False) # get all possible next states for opponent
 
         filtered_states = []
 

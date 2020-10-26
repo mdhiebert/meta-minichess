@@ -47,7 +47,8 @@ if __name__ == "__main__":
 
         while not action.is_valid_action(mc.current_state()): # the model is trying to make an invalid move
             # pick a random valid move
-            legal_move = np.random.choice(mc.current_state().possible_moves(mc.active_color))
+            legal_moves = mc.current_state().possible_moves(mc.active_color, filter_by_check=True)
+            legal_move = np.random.choice(legal_moves)
             legal_action =  MiniChessAction.from_move(legal_move)
 
             act_piece_vector, act_move_vector, act_magnitude_vector = [torch.from_numpy(x).to(device) for x in legal_action.vectors()]
