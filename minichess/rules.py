@@ -19,6 +19,9 @@ KING_VALUE = 6000
 class MiniChessRuleset:
     '''
         MiniChessRuleset object representing the rules of this Chess Game.
+
+        Init with empty arguments to utilize default rules and values
+        from Bhuvaneswaran paper
     '''
     def __init__(self, pawn_move_limit=PAWN_MOVE_LIMIT, pawn_value=PAWN_VALUE,
                         knight_move_limit=KNIGHT_MOVE_LIMIT, knight_value=KNIGHT_VALUE,
