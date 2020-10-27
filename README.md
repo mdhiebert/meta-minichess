@@ -57,3 +57,5 @@ TODO
     - Very useful reference for training Minichess models, also has some pretrained Keras models.
 - Learning to Cope with Adversarial Attacks - X. Lee, A. Heavens et al. ([paper](https://arxiv.org/pdf/1906.12061.pdf))
     - Adversarial RL Grid World algorithm
+- Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks - C. Finn, P. Abbeel & S. Levine ([paper](https://arxiv.org/pdf/1703.03400.pdf))
+	- Meta-Learning Architecture
