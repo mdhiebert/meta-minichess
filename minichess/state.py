@@ -3,7 +3,7 @@ from minichess.pieces import Piece, Pawn, Knight, Bishop, Rook, Queen, King, Pie
 from typing import List
 from minichess.rules import MiniChessRuleset
 
-EMPTY_VECTOR = np.zeros(6)
+EMPTY_VECTOR = np.zeros(7) # 1 bit for color + 6 possible pieces
 BOARD_WIDTH  = 5
 BOARD_HEIGHT = 5
 
@@ -151,7 +151,34 @@ class MiniChessState:
         
         return (-1, -1)
 
-    def possible_next_states(self, for_color: PieceColor) -> list:
+    def possible_moves(self, for_color: PieceColor, filter_by_check=False) -> list:
+        '''
+            Given a color, return a list of all possible moves for that color.
+
+            Parameters
+            ----------
+            for_color :: PieceColor : the color able to move in this state
+
+            Returns
+            -------
+            A list of MiniChessMove, with each item representing a possible move
+        '''
+        move_list = []
+
+        # gather up all possible moves
+        for row in self.board:
+            for tile in row:
+                if tile.occupied() and tile.piece.color == for_color: # there is a piece here of correct color
+                    move_list.extend(tile.piece.possible_moves(self))
+
+        if filter_by_check:
+            filtered_moves = filter(lambda move: not self.apply_move(move).in_check(for_color), move_list)
+        else:
+            filtered_moves = move_list
+
+        return list(filtered_moves)
+
+    def possible_next_states(self, for_color: PieceColor, filter_by_check=True) -> list:
         '''
             Given a color, return a list of all possible next states for that color.
 
@@ -163,18 +190,11 @@ class MiniChessState:
             -------
             A list of MiniChessState, with each state representing a possible next state of the current state
         '''
+        next_states = [self.apply_move(move) for move in self.possible_moves(for_color, filter_by_check=filter_by_check)]
 
-        move_list = []
+        # filtered_states = filter(lambda state: not state.in_check(for_color), next_states)
 
-        # gather up all possible moves
-        for row in self.board:
-            for tile in row:
-                if tile.occupied() and tile.piece.color == for_color: # there is a piece here of correct color
-                    move_list.extend(tile.piece.possible_moves(self))
-
-        next_states = [self.apply_move(move) for move in move_list]
-
-        return next_states
+        return list(next_states)
 
     def in_check(self, for_color: PieceColor) -> bool:
         '''
@@ -188,7 +208,7 @@ class MiniChessState:
             -------
             True if `for_color`'s king is in check, False otherwise
         '''
-        next_states = self.possible_next_states(PieceColor.invert(for_color)) # get all possible next states for opponent
+        next_states = self.possible_next_states(PieceColor.invert(for_color), filter_by_check=False) # get all possible next states for opponent
 
         filtered_states = []
 
@@ -203,6 +223,71 @@ class MiniChessState:
 
         return len(next_states) != len(filtered_states)
 
+    def vector(self):
+        '''
+            Returns
+            -------
+            The vector representation of this board.
+        '''
+
+        # TODO
+
+        vectorized_board = np.array(
+            np.array([np.array([tile.vector() for tile in row]) for row in self.board])
+        )
+
+        # we add an epsilon and some scaling to handle gradient problems
+        eps = 1e-2
+        mult_factor = 128
+
+        return (mult_factor * vectorized_board) + eps
+
+    def invert(self):
+        '''
+            Returns
+            -------
+            `MiniChessState` where all the pieces are inverted.
+        '''
+
+        return MiniChessState(rules = self.rules, board = [[tile.invert() for tile in row] for row in self.board])
+
+    def rotate(self):
+        '''
+            Returns this board as if it were from the opposite player's perspective,
+            i.e. we rotate the board 180 degrees.
+
+            This is useful for training.
+
+            Returns
+            -------
+            `MiniChessState` rotated 180 degrees.
+        '''
+        new_board = []
+
+        for row in reversed(self.board):
+            new_board.append(list())
+            for col in reversed(row):
+                new_board[-1].append(col)
+
+        return MiniChessState(rules = self.rules, board = new_board)
+
+    def rotate_invert(self):
+        '''
+            Returns
+            -------
+            `MiniChessState` rotated and inverted.
+        '''
+
+        return self.rotate().invert()
+
+    def value(self):
+        '''
+            Returns
+            -------
+            The point value of this board.
+        '''
+        return sum([sum([tile.value() for tile in row]) for row in self.board])
+
     def __str__(self):
         s = ''
 
@@ -212,6 +297,21 @@ class MiniChessState:
             s += '\n'
 
         return s
+
+    def __eq__(self, other):
+        if type(other) == MiniChessState:
+            for row in range(len(self.board)):
+                for col in range(len(self.board[row])):
+                    if self.board[row][col] != other.board[row][col]:
+                        return False
+        return True
+
+    def __hash__(self):
+        return hash(
+            tuple(
+                [tuple([hash(tile) for tile in row]) for row in self.board]
+            )
+        )
 
 
 class MiniChessTile:
@@ -258,12 +358,36 @@ class MiniChessTile:
         if not issubclass(type(piece), Piece): raise RuntimeError('Cannot place object of type {} on a MiniChessTile'.format(type(piece)))
         self.piece = piece
 
+    def invert(self):
+        '''
+            Returns
+            -------
+            A tile where the piece is inverted.
+        '''
+        return MiniChessTile(self.piece.invert()) if self.occupied() else MiniChessTile(self.piece)
+
     def copy(self):
         """
-            Returns a copy of this piece.
+            Returns
+            -------
+            A copy of this piece.
         """
         return MiniChessTile(piece=None if self.piece == None else self.piece.copy())
+
+    def value(self):
+        """
+            Returns
+            -------
+            The point value of this tile if occupied, 0 else.
+        """
+        return self.piece.value() if self.occupied() else 0
 
     def __str__(self):
         piece_str = str(self.piece) if self.occupied() else ' '
         return '[{}]'.format(piece_str)
+
+    def __eq__(self, other):
+        return type(other) == MiniChessTile and self.piece == other.piece
+    
+    def __hash__(self):
+        return hash(self.piece)

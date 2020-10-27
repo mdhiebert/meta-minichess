@@ -43,8 +43,8 @@ class MiniChessRuleset:
         self.king_value = king_value
         self.queen_value = queen_value
 
-    @staticmethod # TODO this should be static? or maybe not -> ya!
-    def from_vector(self, vector: np.array):
+    @staticmethod
+    def from_vector(vector: np.array):
         '''
             Create a MiniChessRuleset from a vector of form:
 
@@ -63,13 +63,15 @@ class MiniChessRuleset:
             -------
             None
         '''
+        mcrs = MiniChessRuleset()
+
         f_cycle = [
-            self._set_pawn_rules,
-            self._set_knight_rules,
-            self._set_bishop_rules,
-            self._set_rook_rules,
-            self._set_king_rules,
-            self._set_queen_rules
+            mcrs._set_pawn_rules,
+            mcrs._set_knight_rules,
+            mcrs._set_bishop_rules,
+            mcrs._set_rook_rules,
+            mcrs._set_king_rules,
+            mcrs._set_queen_rules
         ]
 
         v_cycle = [

@@ -1,6 +1,7 @@
 from minichess.state import MiniChessState
 from minichess.pieces import PieceColor
 from minichess.rules import MiniChessRuleset
+from learning.action import MiniChessAction
 import enum
 import random
 
@@ -11,6 +12,8 @@ class TerminalStatus(enum.Enum):
     WHITE_WIN = 1
     BLACK_WIN = 2
     DRAW = 3
+
+# TODO add_player and such
 
 class MiniChess:
     def __init__(self, rules: MiniChessRuleset = None, active_color = PieceColor.WHITE):
@@ -44,39 +47,53 @@ class MiniChess:
         """
         return self.state
 
-    def immediate_states(self) -> list:
+    def immediate_states(self) -> list: # TODO checkmate bugz
         """
             Returns all possible next states given the current state.
         """
 
-        # TODO can't move to be in check
-        # endgame logic
-
         next_states = self.state.possible_next_states(self.active_color)
 
-        filtered_states = filter(lambda state: not state.in_check(self.active_color), next_states)
+        # filtered_states = filter(lambda state: not state.in_check(self.active_color), next_states)
 
-        return list(filtered_states)
+        return next_states
 
     def terminal_status(self):
         """
             Returns the status of this game.
         """
 
+        # if the game has gone on this long, random moves could go on indefinitely
         if self.turn_counter > TURN_CUTOFF: return TerminalStatus.DRAW
 
         if self.state.in_check(self.active_color): # this player is in check
-            if len(self.immediate_states()) == 0:
+            if len(self.immediate_states()) == 0: # no possible moves -> checkmate!
                 return TerminalStatus.WHITE_WIN if self.active_color == PieceColor.BLACK else TerminalStatus.BLACK_WIN
             else:
                 return TerminalStatus.ONGOING
-        else:
+        else: # not in check
             if len(self.immediate_states()) == 0: # not in check but can't move
-                return TerminalStatus.DRAW
+                return TerminalStatus.DRAW # stalemate
             else:
-                return TerminalStatus.ONGOING
+                return TerminalStatus.ONGOING # keep playing
+
+    def apply_action(self, action: MiniChessAction):
+        '''
+            TODO write docstring
+        '''
+        self.state = self.state.apply_move(action.to_minichess_move(self.state))
+        
+        # self.state = self.state.rotate_invert() # TODO is this worth it?
+
+        self.turn_counter += 1
+
+        self.active_color = PieceColor.invert(self.active_color)
 
     def play_random(self):
+        """
+            Method for debugging that plays out (and prints) a game with both
+            players simply making random moves.
+        """
         while self.terminal_status() == TerminalStatus.ONGOING:
             self.display_ascii()
             print('+-------------+')
@@ -95,4 +112,7 @@ class MiniChess:
         print(self.terminal_status().name)
 
     def display_ascii(self):
+        """
+            Prints the string version of the current game state.
+        """
         print(str(self.state))

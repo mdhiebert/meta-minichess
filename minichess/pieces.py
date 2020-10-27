@@ -66,11 +66,10 @@ class Piece:
             Returns
             -------
             numpy array representing the vector encoding of this piece:
-                ID +
                 COLOR (0 for white, 1 for black) +
                 ONEHOT
         '''
-        return np.array([self.id, self.color.value] + self._onehot())
+        return np.array([self.color.value] + self._onehot())
 
     @staticmethod
     def from_vector(vector: np.array):
@@ -132,8 +131,41 @@ class Piece:
         '''
         raise NotImplementedError
 
+    def invert(self):
+        '''
+            Returns a deep copy of this Piece, but of opposite color.
+
+            Returns
+            -------
+            Piece that is equal to this piece in every way except for color, which is opposite of its original value.
+        '''
+
+        return type(self)(self.id, PieceColor.invert(self.color), self.points, self.max_move_range)
+
+    def value(self):
+        '''
+            Returns
+            -------
+            The point value of this piece.
+        '''
+
+        modifier = -2 * self.color.value + 1
+
+        return modifier * self.points
+
+    def readable(self):
+        '''
+            Returns
+            -------
+            Human readable string representing this piece.
+        '''
+        return '{}({})'.format(str(type(self)), self.id)
+
     def __eq__(self, other):
         return type(self) == type(other) and self.color == other.color and self.id == other.id
+
+    def __hash__(self):
+        return hash((self.id, str(self)))
 
 # Specific Piece Definitions
 
@@ -163,13 +195,17 @@ class Pawn(Piece):
                 MiniChessMove((row,col), forward_one, piece=self)
             )
 
-        if row == back_row + direction: # we are a pawn in our starting row
-            # move forward two
-            forward_two = (row + 2*direction, col)
-            if self._valid_move(state, forward_two, capturing=False):
-                possible_moves.append(
-                    MiniChessMove((row,col), forward_two, piece=self)
-                )
+            # can't move forward 2 without being able to move forward 1
+
+            # TODO maybe get rid of this
+
+            if row == back_row + direction: # we are a pawn in our starting row
+                # move forward two
+                forward_two = (row + 2*direction, col)
+                if self._valid_move(state, forward_two, capturing=False):
+                    possible_moves.append(
+                        MiniChessMove((row,col), forward_two, piece=self)
+                    )
 
         # top left capture
         top_left_capture = (row + direction, col + direction)
@@ -509,5 +545,8 @@ class MiniChessMove:
         if self.is_castle:
             raise NotImplementedError
 
-        raise NotImplementedError
+        return '{} from {} to {}'.format(self.piece.readable(), self.frm, self.to)
+
+    def __eq__(self, other):
+        return type(other) == type(self) and self.frm == other.frm and self.to == other.to
 
