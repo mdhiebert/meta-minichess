@@ -43,8 +43,6 @@ if __name__ == "__main__":
 
         # loss calculations
 
-        c = 0
-
         while not action.is_valid_action(mc.current_state()): # the model is trying to make an invalid move
             # pick a random valid move
             legal_moves = mc.current_state().possible_moves(mc.active_color, filter_by_check=True)
