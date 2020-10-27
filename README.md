@@ -59,3 +59,7 @@ TODO
     - Adversarial RL Grid World algorithm
 - Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks - C. Finn, P. Abbeel & S. Levine ([paper](https://arxiv.org/pdf/1703.03400.pdf))
 	- Meta-Learning Architecture
+	- Utilize MAML for Few-Shot Supervised Learning as basline
+- Meta-World: A Benchmark and Evaluation for Multi-Task and Meta Reinforcement Learning - T. Yu, D. Quillen et al. ([paper](https://arxiv.org/pdf/1910.10897v1.pdf))
+	- Defined 'Meta-World' as task distribution
+	- Utilize as model to define task/rules distribution of different chess piece rule sets

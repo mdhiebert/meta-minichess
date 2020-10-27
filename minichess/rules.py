@@ -93,6 +93,8 @@ class MiniChessRuleset:
         else:
             raise RuntimeError('from_vector expected input vector of shape (6,) or (2,6) but got vector of shape {}'.format(vector.shape))
 
+        return mcrs
+
     def pawn_rules(self):
         return (self.pawn_move_limit, self.pawn_value)
 
@@ -134,3 +136,22 @@ class MiniChessRuleset:
     def _set_queen_rules(self, ml, v):
         self.queen_move_limit = ml
         self.queen_value = v
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        rep = dict()
+        rep['pawn_move_limit'] = str(self.pawn_move_limit)
+        rep['pawn_value'] = str(self.pawn_value)
+        rep['knight_move_limit'] = str(self.knight_move_limit)
+        rep['knight_value'] = str(self.knight_value)
+        rep['bishop_move_limit'] = str(self.bishop_move_limit)
+        rep['bishop_value'] = str(self.bishop_value)
+        rep['rook_move_limit'] = str(self.rook_move_limit)
+        rep['rook_value'] = str(self.rook_value)
+        rep['king_move_limit'] = str(self.king_move_limit)
+        rep['king_value'] = str(self.king_value)
+        rep['queen_move_limit'] = str(self.queen_move_limit)
+        rep['queen_value'] = str(self.queen_value)
+        return str(rep)
