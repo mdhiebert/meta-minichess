@@ -22,8 +22,6 @@ if __name__ == "__main__":
 
     while mc.terminal_status() == TerminalStatus.ONGOING:
 
-        print(mc.active_color)
-
         player = white_player if mc.active_color == PieceColor.WHITE else black_player
         opt = white_opt if mc.active_color == PieceColor.WHITE else black_opt
 
