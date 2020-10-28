@@ -8,8 +8,35 @@ class PieceColor(enum.Enum):
     BLACK = 1
 
     @staticmethod
-    def invert(color):
+    def invert(color: PieceColor):
+        '''
+            Parameters
+            ----------
+            color :: PieceColor : the color to invert
+
+            Returns
+            -------
+            The opposite color of `color`.
+        '''
         return PieceColor.WHITE if color == PieceColor.BLACK else PieceColor.BLACK
+
+    @staticmethod
+    def to_string(color: PieceColor):
+        '''
+            Parameters
+            ----------
+            color :: PieceColor : color to convert to string
+
+            Returns
+            -------
+            The color that `color` represents as an all-lowercase string
+        '''
+        if color == PieceColor.WHITE:
+            return 'white'
+        elif color == PieceColor.BLACK:
+            return 'black'
+        else:
+            raise RuntimeError('Invalid PieceColor')
 
 class Piece:
     '''
@@ -45,7 +72,7 @@ class Piece:
             list of MiniChessMove representing all possible moves this piece can
             make
         '''
-        raise NotImplementedError # TODO
+        raise NotImplementedError
 
     def _onehot(self) -> list:
         '''

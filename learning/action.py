@@ -255,14 +255,9 @@ class MiniChessAction:
             True if this action results in a valid next state (i.e. it can be taken), False otherwise
         '''
 
-        # print(self)
         move = self.to_minichess_move(state)
-        # print('mv', move) # TODO clean up prints
 
         next_moves = state.possible_moves(self.piece.color, filter_by_check=True)
-        # for mv in next_moves:
-        #     print(mv)
-        # print('valid?', move in next_moves)
         return move in next_moves
 
     def __str__(self):
