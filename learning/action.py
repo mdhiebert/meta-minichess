@@ -76,7 +76,7 @@ class MiniChessAction:
         the minor diagonal, vertically, or horizontally. In reality, the types of move are more
         restrictive and will be penalized accordingly.
 
-        Magnitude: On the extermes, a piece can only ever move at most 4 or -4 tiles away.
+        Magnitude: On the extremes, a piece can only ever move at most 4 or -4 tiles away.
     '''
 
     def __init__(self, piece: Piece, _type: ActionType, magnitude: int):

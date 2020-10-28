@@ -5,27 +5,30 @@ from learning.model import MiniChessModel
 import torch
 import numpy as np
 
+# Self-Play Training Module
+
 if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     counter = 0
 
+    # init our board and two players
     mc = MiniChess()
     white_player = MiniChessModel().to(device)
     black_player = MiniChessModel().to(device)
 
+    # loss functions
     loss_fn = torch.nn.NLLLoss()
     white_opt = torch.optim.Adam(white_player.parameters(), lr=1e-3)
     black_opt = torch.optim.Adam(black_player.parameters(), lr=1e-3)
 
     mc.display_ascii()
 
+    # game loop
     while mc.terminal_status() == TerminalStatus.ONGOING:
 
         player = white_player if mc.active_color == PieceColor.WHITE else black_player
         opt = white_opt if mc.active_color == PieceColor.WHITE else black_opt
-
-        # if counter == 10: break
 
         # get the board in vector form
         vector = torch.from_numpy(mc.current_state().vector()).to(device)
@@ -42,20 +45,20 @@ if __name__ == "__main__":
         # loss calculations
 
         while not action.is_valid_action(mc.current_state()): # the model is trying to make an invalid move
+
             # pick a random valid move
             legal_moves = mc.current_state().possible_moves(mc.active_color, filter_by_check=True)
             legal_move = np.random.choice(legal_moves)
             legal_action =  MiniChessAction.from_move(legal_move)
 
+            # convert that random legal action to a vector
             act_piece_vector, act_move_vector, act_magnitude_vector = [torch.from_numpy(x).to(device) for x in legal_action.vectors()]
             act_piece_argmax = torch.argmax(act_piece_vector).unsqueeze(0)
             act_move_argmax = torch.argmax(act_move_vector).unsqueeze(0)
             act_magnitude_argmax = torch.argmax(act_magnitude_vector).unsqueeze(0)
 
+            # loss to learn rules!
             loss = loss_fn(piece_vector, act_piece_argmax) + loss_fn(move_vector, act_move_argmax) + loss_fn(magnitude_vector, act_magnitude_argmax)
-
-            # print('suggested', action)
-            # print('actual', legal_action)
 
             # penalize heavily
             loss *= 10
@@ -71,7 +74,6 @@ if __name__ == "__main__":
             action = MiniChessAction.from_vectors(mc.active_color, piece_vector.cpu().detach().numpy(), 
                                                     move_vector.cpu().detach().numpy(), 
                                                     magnitude_vector.cpu().detach().numpy())
-            # print('revised', action)
 
         # our real loss comparison will come from MCTS 
         loss = loss_fn(piece_vector, torch.argmax(piece_vector).unsqueeze(0)) # TODO
