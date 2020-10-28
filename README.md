@@ -57,6 +57,9 @@ TODO
     - Very useful reference for training Minichess models, also has some pretrained Keras models.
 - Learning to Cope with Adversarial Attacks - X. Lee, A. Heavens et al. ([paper](https://arxiv.org/pdf/1906.12061.pdf))
     - Adversarial RL Grid World algorithm
+- Continuous Adaptation via Meta-Learning in Nonstationary and Competitive Environments - M. Al Shedivat, T. Bansal, et al. ([paper](https://arxiv.org/pdf/1710.03641.pdf)) ([code](https://github.com/openai/robosumo))
+	- 'Spider' paper
+	- Similar meta-model & outer-loop structure
 - Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks - C. Finn, P. Abbeel & S. Levine ([paper](https://arxiv.org/pdf/1703.03400.pdf))
 	- Meta-Learning Architecture
 	- Utilize MAML for Few-Shot Supervised Learning as basline
