@@ -2,8 +2,13 @@ from minichess.minichess import MiniChess, TerminalStatus
 from minichess.pieces import PieceColor
 from learning.action import MiniChessAction
 from learning.model import MiniChessModel
+from learning.mcts.mcts import MCTS
 import torch
 import numpy as np
+
+MCTS_FILE = ''
+MCTS_SIMS_PER_STEP = 50
+COUNTER_BREAK = 100
 
 # Self-Play Training Module
 
@@ -22,10 +27,17 @@ if __name__ == "__main__":
     white_opt = torch.optim.Adam(white_player.parameters(), lr=1e-3)
     black_opt = torch.optim.Adam(black_player.parameters(), lr=1e-3)
 
+    # init our MCTS
+
+    mcts = MCTS.from_json(MCTS_FILE) if MCTS_FILE else MCTS()
+    mcts.iterate(mc.state, PieceColor.WHITE) # set first state as our root state and iterate once
+
     mc.display_ascii()
 
     # game loop
     while mc.terminal_status() == TerminalStatus.ONGOING:
+
+        if counter >= COUNTER_BREAK: break
 
         player = white_player if mc.active_color == PieceColor.WHITE else black_player
         opt = white_opt if mc.active_color == PieceColor.WHITE else black_opt
@@ -75,8 +87,22 @@ if __name__ == "__main__":
                                                     move_vector.cpu().detach().numpy(), 
                                                     magnitude_vector.cpu().detach().numpy())
 
+        # Conduct MCTS iterations
+        for _ in range(MCTS_SIMS_PER_STEP):
+            mcts.iterate(mc.current_state(), mc.active_color)
+
+        # Get the relatively best move from our MCTS
+        best_move = mcts.suggest_move(mc.current_state(), mc.active_color)
+        best_action = MiniChessAction.from_move(best_move)
+
+        # convert best action to vectors
+        best_piece_vector, best_move_vector, best_magnitude_vector = [torch.from_numpy(x).to(device) for x in best_action.vectors()]
+        best_piece_argmax = torch.argmax(best_piece_vector).unsqueeze(0)
+        best_move_argmax = torch.argmax(best_move_vector).unsqueeze(0)
+        best_magnitude_argmax = torch.argmax(best_magnitude_vector).unsqueeze(0)
+
         # our real loss comparison will come from MCTS 
-        loss = loss_fn(piece_vector, torch.argmax(piece_vector).unsqueeze(0)) # TODO
+        loss =  loss_fn(piece_vector, best_piece_argmax) + loss_fn(move_vector, best_move_argmax) + loss_fn(magnitude_vector, best_magnitude_argmax)
         opt.zero_grad()
         loss.backward()
         opt.step()
@@ -86,6 +112,8 @@ if __name__ == "__main__":
         mc.display_ascii()
 
         counter += 1
+
+    mcts.json()
 
     print(mc.terminal_status())
 

@@ -3,12 +3,14 @@ from minichess.resources import *
 import numpy as np
 import enum
 
+# TODO convert pawn to queen upon reaching end square
+
 class PieceColor(enum.Enum):
     WHITE = 0
     BLACK = 1
 
     @staticmethod
-    def invert(color: PieceColor):
+    def invert(color):
         '''
             Parameters
             ----------
@@ -21,7 +23,7 @@ class PieceColor(enum.Enum):
         return PieceColor.WHITE if color == PieceColor.BLACK else PieceColor.BLACK
 
     @staticmethod
-    def to_string(color: PieceColor):
+    def to_string(color):
         '''
             Parameters
             ----------

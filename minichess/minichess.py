@@ -45,13 +45,11 @@ class MiniChess:
 
     def current_state(self):
         """
-            Returns the current state of the board as a vector with onehots
-            encoding each tile on the board (so shape is 25x6).
+            Returns the current state of the board.
 
             Returns
             -------
-            np array of shape (25, 6) representing the current state of the
-            board
+            MiniChessState representing the current state of the board
         """
         return self.state
 
@@ -134,7 +132,7 @@ class MiniChess:
         while self.terminal_status() == TerminalStatus.ONGOING:
             
             candidates = self.immediate_states()
-            self.state = random.sample(candidates)
+            self.state = random.choice(candidates)
 
             self.turn_counter += 1
 
