@@ -76,7 +76,7 @@ class MiniChessAction:
         the minor diagonal, vertically, or horizontally. In reality, the types of move are more
         restrictive and will be penalized accordingly.
 
-        Magnitude: On the extermes, a piece can only ever move at most 4 or -4 tiles away.
+        Magnitude: On the extremes, a piece can only ever move at most 4 or -4 tiles away.
     '''
 
     def __init__(self, piece: Piece, _type: ActionType, magnitude: int):
@@ -255,14 +255,9 @@ class MiniChessAction:
             True if this action results in a valid next state (i.e. it can be taken), False otherwise
         '''
 
-        # print(self)
         move = self.to_minichess_move(state)
-        # print('mv', move) # TODO clean up prints
 
         next_moves = state.possible_moves(self.piece.color, filter_by_check=True)
-        # for mv in next_moves:
-        #     print(mv)
-        # print('valid?', move in next_moves)
         return move in next_moves
 
     def __str__(self):
