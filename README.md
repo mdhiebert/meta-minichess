@@ -60,9 +60,9 @@ TODO
 - Continuous Adaptation via Meta-Learning in Nonstationary and Competitive Environments - M. Al Shedivat, T. Bansal, et al. ([paper](https://arxiv.org/pdf/1710.03641.pdf)) ([code](https://github.com/openai/robosumo))
 	- 'Spider' paper
 	- Similar meta-model & outer-loop structure
-- Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks - C. Finn, P. Abbeel & S. Levine ([paper](https://arxiv.org/pdf/1703.03400.pdf))
+- Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks - C. Finn, P. Abbeel & S. Levine ([paper](https://arxiv.org/pdf/1703.03400.pdf)) ([code](https://github.com/cbfinn/maml))
 	- Meta-Learning Architecture
-	- Utilize MAML for Few-Shot Supervised Learning as basline
+	- Utilized MAML for Few-Shot Supervised Learning as basline
 - Meta-World: A Benchmark and Evaluation for Multi-Task and Meta Reinforcement Learning - T. Yu, D. Quillen et al. ([paper](https://arxiv.org/pdf/1910.10897v1.pdf))
 	- Defined 'Meta-World' as task distribution
 	- Utilize as model to define task/rules distribution of different chess piece rule sets
