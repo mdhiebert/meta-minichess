@@ -121,6 +121,22 @@ class MiniChess:
         print('+-------------+')
         print(self.terminal_status().name)
 
+    def make_random_move(self):
+        '''
+            Makes a random move for the currently active color and progresses to next turn.
+        '''
+
+        self.state = random.choice(self.immediate_states())
+
+        self.turn_counter += 1
+
+        self.active_color = PieceColor.invert(self.active_color)
+
+    def make_greedy_move(self):
+        '''
+        '''
+        raise NotImplementedError # TODO
+
     def rollout_to_completion(self):
         '''
             Randomly plays out this game until it reaches a terminal state.
