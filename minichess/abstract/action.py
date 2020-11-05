@@ -12,6 +12,12 @@ class AbstractActionFlags(Enum):
     PROMOTE_BISHOP = 2
     PROMOTE_QUEEN = 3
 
+    CAPTURE = 4
+    KING_CAPTURE = 5
+
+    CHECK = 6
+    CHECKMATE = 7
+
     # TODO
 
 class AbstractChessAction:

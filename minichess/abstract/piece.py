@@ -65,12 +65,14 @@ class AbstractChessPiece:
             Returns
             -------
             numpy array representing the one-hot encoding of this piece:
+            ```
                 [1, 0, 0, 0, 0, 0] = Pawn
                 [0, 1, 0, 0, 0, 0] = Knight
                 [0, 0, 1, 0, 0, 0] = Bishop
                 [0, 0, 0, 1, 0, 0] = Rook
                 [0, 0, 0, 0, 1, 0] = Queen
                 [0, 0, 0, 0, 0, 1] = King
+            ```
         '''
         raise NotImplementedError
 
