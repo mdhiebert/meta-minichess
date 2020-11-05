@@ -1,4 +1,4 @@
-from minichess.piece import AbstractPiece
+from minichess.abstract.piece import AbstractPiece
 
 import numpy as np
 

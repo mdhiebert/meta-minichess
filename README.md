@@ -7,6 +7,8 @@
 - [Changelog](#changelog)
 - [Objective](#objective)
 - [Methodology](#methodology)
+	- [Action Space](#action-space)
+		- [Legality](#legality)
 - [Result Log](#result-log)
     - [Naïve Opening](#naïve-opening)
 - [References](#references)
@@ -35,13 +37,32 @@ _crossed-out = DONE_
 
 ## Changelog
 
-TODO
+*[11/04]* Beginning the refactor. Pushed initital code for [gym-minichess](https://github.com/mdhiebert/gym-minichess). Will do this "bottom-up", starting with MiniChess implementation and build up.
+
+*[11/03]* Decided to create an OpenAI Gym environment to facilitate our RL. Will hopefully be easy to hook it up to a MuZero implementation. We can create several sub-environments within our Gym to handle the variations across rules. Will require a refactor.
+
+*[10/30]* Model able to train, improve, and then achieve ideal end-states (victory vs naive opponents, draw vs. itself) using MCTS and conventional neural network.
 
 ## Objective
 
 TODO
 
 ## Methodology
+
+### Action Space
+
+For our RL model, we have chosen to represent our action space as a (1225,) vector. This is because we have:
+
+- 5 x 5 = 25 possible tiles to choose from when selecting a piece
+- 8 directions to move it in, maximum magnitude 4 to move from initial position along that direction
+- additional 8 possible knight moves
+- 3 underpromotions (knight, bishop, rook), with 3 moves to result in an underpromotion (left-diag capture, forward, right-diag capture).
+
+This gives us 5x5x(8x4 + 8 + 3x3) = 1225 possible actions to choose from.
+
+#### Legality
+
+Of course. Not all moves are valid at every step. To account for this, we simply apply a mask over illegal moves to our networks output and re-normalize.
 
 TODO
 

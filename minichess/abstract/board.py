@@ -1,4 +1,4 @@
-from minichess.action import AbstractChessAction
+from minichess.abstract.action import AbstractChessAction
 
 class AbstractChessBoard:
     '''
