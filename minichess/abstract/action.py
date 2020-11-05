@@ -1,4 +1,5 @@
-from minichess.abstract.piece import AbstractPiece
+from minichess.abstract.board import AbstractChessBoard
+from minichess.abstract.piece import AbstractChessPiece
 
 import numpy as np
 
@@ -24,7 +25,7 @@ class AbstractChessAction:
             (5 * 5)( (8 * 4) + 8 + 9) = 1225
         possible moves.
     '''
-    def __init__(self, agent: AbstractPiece, from_pos: tuple, to_pos: tuple, captured_piece: AbstractPiece = None, modifier_flags: List[AbstractActionFlags] = None):
+    def __init__(self, agent: AbstractChessPiece, from_pos: tuple, to_pos: tuple, captured_piece: AbstractChessPiece = None, modifier_flags: List[AbstractActionFlags] = None):
         pass # TODO
 
     def encode(self) -> np.array:
@@ -38,10 +39,83 @@ class AbstractChessAction:
         raise NotImplementedError
 
     @staticmethod
-    def decode(encoding_vector: np.array):
+    def decode(encoding_vector: np.array, state_tm1: np.array):
+        '''
+            Decode an AbstractChessAction from an actionspace vector and a game state.
+
+            Parameters
+            ----------
+            encoding_vector :: np.array : the (ACTION_SPACE,) vector representing a given action.
+
+            state_tm1 :: np.array : the (t-1)-th state of the game, representing the state immediately preceding
+            this action. That is, the application of this action drove the game state from `state_tm1` to `state_t`
+
+            Returns
+            -------
+            AbstractChessAction representing the decoded vector.
+        '''
         raise NotImplementedError
 
     @staticmethod
-    def parse(action_string: str):
+    def parse(action_string: str, state_tm1: np.array):
+        '''
+            Parse an AbstractChessAction from a string and a game state.
+
+            Parameters
+            ----------
+            action_string :: str : the string representation of a given action.
+
+            state_tm1 :: np.array : the (t-1)-th state of the game, representing the state immediately preceding
+            this action. That is, the application of this action drove the game state from `state_tm1` to `state_t`
+
+            Returns
+            -------
+            AbstractChessAction representing the parsed action.
+        '''
+        raise NotImplementedError
+
+### AbstractActionVisitor for ease of rule-change
+
+# https://stackoverflow.com/a/28398903/7042418
+
+# A couple helper functions first
+
+def _qualname(obj):
+    """Get the fully-qualified name of an object (including module)."""
+    return obj.__module__ + '.' + obj.__qualname__
+
+def _declaring_class(obj):
+    """Get the name of the class that declared an object."""
+    name = _qualname(obj)
+    return name[:name.rfind('.')]
+
+# Stores the actual visitor methods
+_methods = {}
+
+# Delegating visitor implementation
+def _visitor_impl(self, arg):
+    """Actual visitor method implementation."""
+    method = _methods[(_qualname(type(self)), type(arg))]
+    return method(self, arg)
+
+# The actual @visitor decorator
+def visitor(arg_type):
+    """Decorator that creates a visitor method."""
+
+    def decorator(fn):
+        declaring_class = _declaring_class(fn)
+        _methods[(declaring_class, arg_type)] = fn
+
+        # Replace all decorated methods with _visitor_impl
+        return _visitor_impl
+
+    return decorator
+
+class AbstractChessActionVisitor:
+    '''
+        Skeleton code for our ChessActionVisitor, a class designed for ease of use in modifying and changing rules.
+    '''
+    @visitor(AbstractChessPiece)
+    def visit(self, piece: AbstractChessPiece, board: AbstractChessBoard) -> List[AbstractChessAction]:
         raise NotImplementedError
 

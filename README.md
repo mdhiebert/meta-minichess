@@ -20,19 +20,26 @@ _crossed-out = DONE_
 - Create a MiniChess library that can handle board state and rules.
 	- ~~Create from scratch.~~
 	- Leverage [existing chess library](https://github.com/niklasf/python-chess).
-- Create an Open-AI Gym environment for Gardner MiniChess
-	- [gym-chess](https://github.com/iamlucaswolf/gym-chess) for reference.
-	- As well as the [docs](https://github.com/openai/gym/blob/master/docs/creating-environments.md) from [the OpenAI gym repo](https://github.com/openai/gym).
+- ~~Create an Open-AI Gym environment for Gardner MiniChess~~
+	- ~~[gym-chess](https://github.com/iamlucaswolf/gym-chess) for reference.~~
+	- ~~As well as the [docs](https://github.com/openai/gym/blob/master/docs/creating-environments.md) from [the OpenAI gym repo](https://github.com/openai/gym).~~
 - Interface environment with [MuZero](https://github.com/koulanurag/muzero-pytorch) implementation
 	- [This](https://github.com/werner-duvaud/muzero-general) is a better documented alternative but is Windows-incompatible.
 - Create variant rules as sub-environments in our gym.
 	- [Atomic Chess](https://en.wikipedia.org/wiki/Atomic_chess)
+		- Does not change action space.
 	- [Dark Chess](https://en.wikipedia.org/wiki/Dark_chess)
+		- Changes how observations are generated.
 	- [Extinction Chess](https://en.wikipedia.org/wiki/Extinction_chess)
+		- Changes reward function.
 	- [Monochromatic Chess](https://en.wikipedia.org/wiki/Monochromatic_chess)
+		- Changes legality of moves.
 	- [Portal Chess](https://en.wikipedia.org/wiki/Portal_chess)
+		- Changes action space.
 	- [Progressive Chess](https://en.wikipedia.org/wiki/Progressive_chess)
+		- Changes game structure.
 	- [Rifle Chess](https://www.chessvariants.com/difftaking.dir/rifle.html)
+		- Changes action space.
 - Meta-learn hyperparameters across variable rulesets.
 
 ## Changelog
