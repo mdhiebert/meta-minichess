@@ -14,6 +14,9 @@ BLACK_ROOK = '♜'
 BLACK_QUEEN = '♛'
 BLACK_KING = '♚'
 
+EMPTY_TILE = '⭘'
+SPACE = ' '
+
 '''
 ♜	♞	♝	♛	♚	♝	♞	♜
 ♟	♟	♟	♟	♟	♟	♟	♟
