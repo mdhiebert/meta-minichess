@@ -2,7 +2,8 @@
 
 ## Contents
 
-- [Contents](#Contents)
+- [Contents](#contents)
+- [Setup](#setup)
 - [To-Do](#to-do)
 - [Changelog](#changelog)
 - [Objective](#objective)
@@ -12,6 +13,38 @@
 - [Result Log](#result-log)
     - [Naïve Opening](#naïve-opening)
 - [References](#references)
+
+## Setup
+
+Clone the repository:
+
+```
+git clone https://github.com/mdhiebert/meta-minichess.git
+```
+
+This repository leverages three separate custom packages: [minichess](https://github.com/mdhiebert/minichess.git), [gym-minichess](https://github.com/mdhiebert/gym-minichess), and [muzero-general]() . To install them for use in `meta-minichess`, execute the following lines in the terminal:
+
+```
+git clone https://github.com/mdhiebert/minichess.git
+cd minichess
+pip install -e .
+cd ..
+git clone https://github.com/mdhiebert/gym-minichess
+cd gym-minichess
+pip install -e .
+cd ..
+git clone https://github.com/mdhiebert/muzero-pytorch
+cd muzero-pytorch
+pip install -r requirements.txt
+pip install ray
+pip install -e .
+cd ..
+```
+
+We can train a model on the standard Gardner ruleset with:
+```
+python main.py --env gym-minichess:minichess-gardner-v0 --case minichess --opr train --force
+```
 
 ## To-Do
 
@@ -43,6 +76,8 @@ _crossed-out = DONE_
 - Meta-learn hyperparameters across variable rulesets.
 
 ## Changelog
+
+*[11/07]* Refactor complete. gym-minichess initial implementation is also complete. Able to run a forked version of [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch) for out-of-the-box environment. Working on connecting existing environments with MuZero codebase. Seems to have an error running on Windows - will confirm.
 
 *[11/04]* Beginning the refactor. Pushed initital code for [gym-minichess](https://github.com/mdhiebert/gym-minichess). Will do this "bottom-up", starting with MiniChess implementation and build up.
 
