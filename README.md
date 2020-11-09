@@ -22,7 +22,7 @@ Clone the repository:
 git clone https://github.com/mdhiebert/meta-minichess.git
 ```
 
-This repository leverages three separate custom packages: [minichess](https://github.com/mdhiebert/minichess.git), [gym-minichess](https://github.com/mdhiebert/gym-minichess), and [muzero-general]() . To install them for use in `meta-minichess`, execute the following lines in the terminal:
+This repository leverages three separate custom packages: [minichess](https://github.com/mdhiebert/minichess.git), [gym-minichess](https://github.com/mdhiebert/gym-minichess.git), and [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch.git). To install them for use in `meta-minichess`, execute the following lines in the terminal:
 
 ```
 git clone https://github.com/mdhiebert/minichess.git
