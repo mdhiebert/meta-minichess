@@ -50,7 +50,7 @@ python main.py --env gym-minichess:minichess-gardner-v0 --case minichess --opr t
 
 _crossed-out = DONE_
 
-- Create a MiniChess library that can handle board state and rules.
+- ~~Create a MiniChess library that can handle board state and rules.~~
 	- ~~Create from scratch.~~
 	- Leverage [existing chess library](https://github.com/niklasf/python-chess).
 - ~~Create an Open-AI Gym environment for Gardner MiniChess~~
@@ -71,13 +71,17 @@ _crossed-out = DONE_
 		- Changes action space.
 	- [Progressive Chess](https://en.wikipedia.org/wiki/Progressive_chess)
 		- Changes game structure.
-	- [Rifle Chess](https://www.chessvariants.com/difftaking.dir/rifle.html)
-		- Changes action space.
+	- ~~[Rifle Chess](https://www.chessvariants.com/difftaking.dir/rifle.html)~~
+		- ~~Changes action space.~~
 - Meta-learn hyperparameters across variable rulesets.
 
 ## Changelog
 
+*[11/09]* Implemented Rifle Chess rule variant.
+
 *[11/07]* Refactor complete. gym-minichess initial implementation is also complete. Able to run a forked version of [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch) for out-of-the-box environment. Working on connecting existing environments with MuZero codebase. Seems to have an error running on Windows - will confirm.
+
+Error confirmed for Windows, even with running out-of-box experiments.
 
 *[11/04]* Beginning the refactor. Pushed initital code for [gym-minichess](https://github.com/mdhiebert/gym-minichess). Will do this "bottom-up", starting with MiniChess implementation and build up.
 
