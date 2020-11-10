@@ -61,8 +61,8 @@ _crossed-out = DONE_
 - Create variant rules as sub-environments in our gym.
 	- [Atomic Chess](https://en.wikipedia.org/wiki/Atomic_chess)
 		- Does not change action space.
-	- [Dark Chess](https://en.wikipedia.org/wiki/Dark_chess)
-		- Changes how observations are generated.
+	- ~~[Dark Chess](https://en.wikipedia.org/wiki/Dark_chess)~~
+		- ~~Changes how observations are generated.~~
 	- [Extinction Chess](https://en.wikipedia.org/wiki/Extinction_chess)
 		- Changes reward function.
 	- [Monochromatic Chess](https://en.wikipedia.org/wiki/Monochromatic_chess)
@@ -76,6 +76,8 @@ _crossed-out = DONE_
 - Meta-learn hyperparameters across variable rulesets.
 
 ## Changelog
+
+*[11/10]* Implemented Dark Chess rule variant.
 
 *[11/09]* Implemented Rifle Chess rule variant.
 
