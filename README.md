@@ -4,6 +4,8 @@
 
 - [Contents](#contents)
 - [Setup](#setup)
+	- [Automatic](#automatic)
+	- [Manual](#manual)
 - [To-Do](#to-do)
 - [Changelog](#changelog)
 - [Objective](#objective)
@@ -18,13 +20,25 @@
 
 Clone the repository:
 
-```
+```bash
 git clone https://github.com/mdhiebert/meta-minichess.git
+cd meta-minichess
 ```
 
 This repository leverages three separate custom packages: [minichess](https://github.com/mdhiebert/minichess.git), [gym-minichess](https://github.com/mdhiebert/gym-minichess.git), and [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch.git). To install them for use in `meta-minichess`, execute the following lines in the terminal:
 
+### Automatic
+
+Just run the following script to handle setup:
+
+```bash
+python scripts/refresh.py --development_dir=<PATH_TO_DEVELOPMENT_DIRECTORY>
 ```
+### Manual
+
+First, we install the underlying minichess libraries: 
+
+```bash
 git clone https://github.com/mdhiebert/minichess.git
 cd minichess
 pip install -e .
@@ -33,6 +47,11 @@ git clone https://github.com/mdhiebert/gym-minichess
 cd gym-minichess
 pip install -e .
 cd ..
+```
+
+Then, we install our MuZero libary:
+
+```bash
 git clone https://github.com/mdhiebert/muzero-pytorch
 cd muzero-pytorch
 pip install -r requirements.txt
@@ -42,7 +61,7 @@ cd ..
 ```
 
 We can train a model on the standard Gardner ruleset with:
-```
+```bash
 python main.py --env gym-minichess:minichess-gardner-v0 --case minichess --opr train --force
 ```
 
@@ -76,6 +95,8 @@ _crossed-out = DONE_
 - Meta-learn hyperparameters across variable rulesets.
 
 ## Changelog
+
+*[11/12]* Wrote `scripts/refresh.py` to facilitate setup and make development a little easier.
 
 *[11/10]* Implemented Dark Chess rule variant.
 
