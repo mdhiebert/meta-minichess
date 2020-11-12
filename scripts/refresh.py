@@ -26,7 +26,7 @@ def refresh_dir(d):
         subprocess.run(['git', 'pull'], shell=True, cwd=path.join(dev_dir, d))
     else:
         logging.info('Cloning {}...'.format(d))
-        subprocess.run(['git', 'clone', 'https://github.com/mdhiebert/{}.git'.format(d)], shell=True, cwd=path.abspath(dev_dir))
+        subprocess.run(['git', 'clone', 'https://github.com/mdhiebert/{}.git'.format(d)], shell=True, cwd=dev_dir)
 
     logging.info('Success.')
     logging.info('Installing {} library...'.format(d))
