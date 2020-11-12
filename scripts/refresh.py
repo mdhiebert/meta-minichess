@@ -18,7 +18,7 @@ dev_dir = path.expanduser(args.dev_dir)
 logging.info('Using Development Directory {}'.format(dev_dir))
 logging.info('Absolute path: {}'.format(path.abspath(dev_dir)))
 
-def refresh_dir(d):
+def refresh_dir(d, install_reqs=False):
     logging.info('Checking for minichess...')
     # check for d:
     if path.isdir(path.join(dev_dir, d)):
@@ -27,6 +27,8 @@ def refresh_dir(d):
     else:
         logging.info('Cloning {}...'.format(d))
         subprocess.run(['git', 'clone', 'https://github.com/mdhiebert/{}.git'.format(d)], shell=True, cwd=dev_dir)
+        
+        if install_reqs: subprocess.run(['pip', 'install', 'r', 'requirements.txt'], shell=True, cwd=path.join(dev_dir, d))
 
     logging.info('Success.')
     logging.info('Installing {} library...'.format(d))
@@ -34,8 +36,10 @@ def refresh_dir(d):
     subprocess.run(['pip', 'install', '-e', '.'], shell=True, cwd=path.join(dev_dir, d))    
     logging.info('Success.')
 
-
 refresh_dir('minichess')
 refresh_dir('gym-minichess')
+refresh_dir('muzero-pytorch', install_reqs=True)
+
+
 
 

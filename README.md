@@ -55,14 +55,13 @@ Then, we install our MuZero libary:
 git clone https://github.com/mdhiebert/muzero-pytorch
 cd muzero-pytorch
 pip install -r requirements.txt
-pip install ray
 pip install -e .
 cd ..
 ```
 
 We can train a model on the standard Gardner ruleset with:
 ```bash
-python main.py --env gym-minichess:minichess-gardner-v0 --case minichess --opr train --force
+python main.py --env minichess-gardner-v0 --case minichess --opr train --force
 ```
 
 ## To-Do
