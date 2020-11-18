@@ -1,19 +1,35 @@
-from minichess.state import MiniChessState
-from minichess.pieces import PieceColor
-from minichess.minichess import MiniChess, TerminalStatus
+import logging
+from learning.mcts.simulation import Simulator
 import random
 import json
 
-EMPTY_NODE = {
-    'white': {
-        'num': 0,
-        'den': 0
-    },
-    'black': {
-        'num': 0,
-        'den': 0
-    }
-}
+from minichess.games.abstract.board import AbstractChessBoard, AbstractBoardStatus
+from minichess.games.abstract.piece import PieceColor
+
+# EMPTY_NODE = {
+#     'white': {
+#         'num': 0,
+#         'den': 0,
+#         'max_reward': 0
+#     },
+#     'black': {
+#         'num': 0,
+#         'den': 0,
+#         'max_reward': 0
+#     }
+# }
+
+def EMPTY_NODE():
+    d = dict()
+    d['white'] = dict()
+    d['white']['num'] = 0
+    d['white']['den'] = 0
+    d['white']['max_reward'] = 0
+    d['black'] = dict()
+    d['black']['num'] = 0
+    d['black']['den'] = 0
+    d['black']['max_reward'] = 0
+    return d
 
 class MCTS:
     '''
@@ -45,10 +61,11 @@ class MCTS:
         
         Backpropagation: Use the result of the playout to update information in the nodes on the path from C to R.
     '''
-    def __init__(self, state_dict: dict = None):
+    def __init__(self, env_class, state_dict: dict = None):
         self.state_dict = dict() if state_dict == None else state_dict
+        self.env_class = env_class
 
-    def json(self, save_file = 'learning/mcts/mcts_data.json'):
+    def save_to_json(self, save_file = 'learning/mcts/mcts_data.json'):
         '''
             Converts this MCTS to JSON.
 
@@ -60,7 +77,7 @@ class MCTS:
             json.dump(self.state_dict, outfile)
 
     @staticmethod
-    def from_json(self, json_filename: str = 'learning/mcts/mcts_data.json'):
+    def from_json_file(env_class, json_filename: str = 'learning/mcts/mcts_data.json'):
         '''
             Creates a MCTS instance from a JSON string.
 
@@ -71,11 +88,13 @@ class MCTS:
                     "state_hash_1": {
                         "white": {
                             "num": x,
-                            "den": y
+                            "den": y,
+                            "max_reward": z
                         },
                         "black": {
                             "num": x,
-                            "den": y
+                            "den": y,
+                            "max_reward": z
                         }
                     }
                     ...
@@ -84,13 +103,15 @@ class MCTS:
         with open(json_filename, 'r') as f:
             state_dict = json.load(f)
 
-    def iterate(self, root_state: MiniChessState, currently_active_color: PieceColor):
+        return MCTS(env_class, state_dict)
+
+    def iterate(self, root_env, currently_active_color: PieceColor):
         '''
             Conduct one full Monte Carlo Tree Search iteration with `root_state` as our root node.
 
             Parameters
             ----------
-            root_state :: MiniChessState : the current (root) state of the minichess game
+            root_state :: gym Env : the current (root) state of the minichess game
 
             currently_active_color :: PieceColor : the currently active color of the minichess game
 
@@ -100,23 +121,26 @@ class MCTS:
         '''
 
         # select a leaf
-        leaf_state, leaf_color, seen = self.selection(root_state, currently_active_color)
+        logging.debug('Selecting leaf...')
+        leaf_state, leaf_color, seen = self.selection(root_env)
 
         # add our leaf to seen
+        logging.debug('Adding leaf to seen...')
         seen.append((str(hash(leaf_state)), leaf_color))
 
         # expand it out one step
+        logging.debug('Expanding leaf node one step...')
         expanded_state, expanded_color = self.expansion(leaf_state, leaf_color)
-        expanded_color = PieceColor.invert(leaf_color)
+        expanded_color = leaf_color.invert()
 
 
         # simulate to termination
-        terminal_result = self.simulation(expanded_state, expanded_color)
+        terminal_result, reward = self.simulation(expanded_state, expanded_color)
 
-        return self.backpropagation(expanded_state, expanded_color, seen, terminal_result)
+        return self.backpropagation(expanded_state, expanded_color, seen, terminal_result, reward)
 
 
-    def selection(self, state: MiniChessState, currently_active_color: PieceColor):
+    def selection(self, env):
         '''
             With `(state, currently_active_color)` as the root node, perform a random
             search down known nodes until we arrive at a leaf node.
@@ -138,72 +162,77 @@ class MCTS:
 
         seen = []
 
-        cac = PieceColor.to_string(currently_active_color)
+        cac = str(env.board.active_color)
 
-        while str(hash(state)) in self.state_dict and self.state_dict[str(hash(state))][cac]['den'] != 0:
+        while str(hash(env)) in self.state_dict and self.state_dict[str(hash(env))][cac]['den'] != 0:
 
-            children = state.possible_next_states(currently_active_color)
+            children = env.legal_actions()
             
-            if len(children) == 0: return (state, currently_active_color, seen) # terminal state
+            if len(children) == 0: return (env, env.board.active_color, seen) # terminal state
             
-            seen.append((str(hash(state)), currently_active_color))
+            seen.append((str(hash(env)), env.board.active_color))
 
-            state = random.choice(children)
-            currently_active_color = PieceColor.invert(currently_active_color)
-            cac = PieceColor.to_string(currently_active_color)
+            child = random.choice(children)
+            _ = env.step(child)
+
+            cac = str(env.board.active_color)
 
         # at this point we have reached a leaf node
-        return (state, currently_active_color, seen)
+        return (env, env.board.active_color, seen)
 
-    def expansion(self, leaf_state: MiniChessState, leaf_color: PieceColor):
+    def expansion(self, leaf_env: AbstractChessBoard, leaf_color: PieceColor):
         '''
             Expand our selected leaf node out one iteration and return the expanded node.
 
             Parameters
             ----------
-            leaf_state :: MiniChessState : the current state of the board, acting as the root of our tree from which to search
+            leaf_state :: AbstractChessBoard : the current state of the board, acting as the root of our tree from which to search
 
             leaf_color :: PieceColor : the currently active color in our game state
 
             Returns
             -------
-            the expanded state as a MiniChessState if there is one, else None
+            the expanded state as a AbstractChessBoard if there is one, else None
         '''
         
         # add to our state_dict if it does not yet exist
-        if str(hash(leaf_state)) not in self.state_dict:
-            self.state_dict[str(hash(leaf_state))] = EMPTY_NODE
+        if str(hash(leaf_env)) not in self.state_dict:
+            self.state_dict[str(hash(leaf_env))] = EMPTY_NODE()
         
         # generate possible children
-        children = leaf_state.possible_next_states(leaf_color)
+        children = leaf_env.legal_actions()
 
         # there are no children, perhaps because leaf_state is a terminal state
-        if len(children) == 0: return leaf_state, leaf_color
+        if len(children) == 0:
+            logging.debug('Leaf node is terminal.')
+            return leaf_env, leaf_color
 
-        expanded_state = random.choice(children)
+        child = random.choice(children)
 
-        return expanded_state, PieceColor.invert(leaf_color)
+        leaf_env.step(child)
 
-    def simulation(self, expanded_state: MiniChessState, expanded_color: PieceColor):
+        return leaf_env, leaf_color.invert()
+
+    def simulation(self, expanded_env: AbstractChessBoard, expanded_color: PieceColor):
         '''
             Simulate a chess game from this state to termination.
 
             Parameters
             ----------
-            expanded_state :: MiniChessState : the state of our expanded node
+            expanded_state :: AbstractChessBoard : the state of our expanded node
 
             expanded_color :: PieceColor : the currently active color in leaf game state
 
             Returns
             -------
-            TerminalStatus of the result of this game.
+            tuple of (AbstractChessStatus of the result of this game, reward)
         '''
 
-        mc = MiniChess.init_from_state(expanded_state, expanded_color)
+        sim = Simulator(self.env_class, expanded_env.board, expanded_color)
 
-        return mc.rollout_to_completion()
+        return sim.rollout_to_completion()
 
-    def backpropagation(self, expanded_state: MiniChessState, expanded_color, seen: list, terminal_result: TerminalStatus):
+    def backpropagation(self, expanded_state: AbstractChessBoard, expanded_color, seen: list, terminal_result: AbstractBoardStatus, reward):
         '''
             Backpropagate the results of a simulation back up the tree, incrementing both numerator 
             and denominator in our `state_dict` as follows:
@@ -222,35 +251,41 @@ class MCTS:
 
             seen :: tuple(hashcodes, colors) : the list of seen nodes in our path
 
+            reward :: float : the reward of this simulation
+
             Return
             ------
             True if successful, else False
         '''
 
         # handle last node
-        self._backprop_node(str(hash(expanded_state)), expanded_color, terminal_result)
+        self._backprop_node(str(hash(expanded_state)), expanded_color, terminal_result, reward)
 
         # handle parent nodes
         for node_hash, color in seen:
-            self._backprop_node(node_hash, color, terminal_result)
+            self._backprop_node(node_hash, color, terminal_result, reward)
 
         return True
 
-    def _backprop_node(self, node_hashcode: str, color: PieceColor, result: TerminalStatus):
+    def _backprop_node(self, node_hashcode: str, color: PieceColor, result: AbstractBoardStatus, reward: float):
+
+        logging.debug('Handling backprob for node with hash {}'.format(node_hashcode))
 
         if node_hashcode not in self.state_dict:
-            self.state_dict[node_hashcode] = EMPTY_NODE
+            self.state_dict[node_hashcode] = EMPTY_NODE()
 
-        node_dict = self.state_dict[node_hashcode][PieceColor.to_string(color)]
+        node_dict = self.state_dict[node_hashcode][str(color)]
 
-        if result == TerminalStatus.DRAW:
+        if result == AbstractBoardStatus.DRAW:
             self._increment_node(node_dict, 0.5)
-        elif result == TerminalStatus.WHITE_WIN:
+        elif result == AbstractBoardStatus.WHITE_WIN:
             self._increment_node(node_dict, 1 if color == PieceColor.WHITE else 0)
-        elif result == TerminalStatus.BLACK_WIN:
+        elif result == AbstractBoardStatus.BLACK_WIN:
             self._increment_node(node_dict, 1 if color == PieceColor.BLACK else 0)
         else:
             raise RuntimeError('Expected terminal state for MCTS backpropagation but got {}'.format(result.name))  
+
+        node_dict['max_reward'] = max(node_dict['max_reward'], reward) if color == PieceColor.WHITE else min(node_dict['max_reward'], reward)
 
     def _increment_node(self, node_dict: dict, num_amount: float, den_amount: int = 1):
         '''
@@ -267,22 +302,22 @@ class MCTS:
         node_dict['num'] += num_amount
         node_dict['den'] += den_amount
 
-    def suggest_move(self, current_state: MiniChessState, active_color: PieceColor):
+    def suggest_move(self, current_state: AbstractChessBoard, active_color: PieceColor):
         '''
             Suggest a move that is most conducive to success
 
             Parameters
             ----------
-            current_state :: MiniChessState : the current state of the board
+            current_state :: AbstractChessBoard : the current state of the board
 
             active_color :: PieceColor : the currently active color
 
             Returns
             -------
-            MiniChessMove
+            AbstractChessMove
         '''
         # invert color
-        color = PieceColor.to_string(PieceColor.invert(active_color))
+        color = str(active_color.invert())
 
         # get next states and filter out un-simulated next_states
         next_moves = current_state.possible_moves(active_color)

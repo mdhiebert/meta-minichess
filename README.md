@@ -25,11 +25,20 @@ git clone https://github.com/mdhiebert/meta-minichess.git
 cd meta-minichess
 ```
 
+It is recommended to create a conda environment when running meta-minichess games:
+
+```bash
+conda create -n mmc python=3.7.4 anaconda
+conda activate mmc
+```
+
 This repository leverages three separate custom packages: [minichess](https://github.com/mdhiebert/minichess.git), [gym-minichess](https://github.com/mdhiebert/gym-minichess.git), and [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch.git). To install them for use in `meta-minichess`, execute the following lines in the terminal:
 
 ### Automatic
 
 Just run the following script to handle setup:
+
+*[TODO]* DOES NOT WORK FOR MACOS
 
 ```bash
 python scripts/refresh.py --development_dir=<PATH_TO_DEVELOPMENT_DIRECTORY>
@@ -55,6 +64,8 @@ Then, we install our MuZero libary:
 git clone https://github.com/mdhiebert/muzero-pytorch
 cd muzero-pytorch
 pip install -r requirements.txt
+pip install torch
+pip install tensorboard
 pip install -e .
 cd ..
 ```
@@ -77,8 +88,8 @@ _crossed-out = DONE_
 - Interface environment with [MuZero](https://github.com/koulanurag/muzero-pytorch) implementation
 	- [This](https://github.com/werner-duvaud/muzero-general) is a better documented alternative but is Windows-incompatible.
 - Create variant rules as sub-environments in our gym.
-	- [Atomic Chess](https://en.wikipedia.org/wiki/Atomic_chess)
-		- Does not change action space.
+	- ~~[Atomic Chess](https://en.wikipedia.org/wiki/Atomic_chess)~~
+		- ~~Does not change action space.~~
 	- ~~[Dark Chess](https://en.wikipedia.org/wiki/Dark_chess)~~
 		- ~~Changes how observations are generated.~~
 	- [Extinction Chess](https://en.wikipedia.org/wiki/Extinction_chess)
@@ -92,8 +103,14 @@ _crossed-out = DONE_
 	- ~~[Rifle Chess](https://www.chessvariants.com/difftaking.dir/rifle.html)~~
 		- ~~Changes action space.~~
 - Meta-learn hyperparameters across variable rulesets.
+- Update `refresh.py` or other setup scripts to work on other OSs
 
 ## Changelog
+*[11/18]* Implemented Atomic Chess rule variant.
+
+*[11/15]* Updated `scripts/mcts_sim.py` to support command line arguments to set game.
+
+*[11/14]* Wrote `scripts/mcts_sim.py` to facilitate MCTS simulations.
 
 *[11/12]* Wrote `scripts/refresh.py` to facilitate setup and make development a little easier.
 

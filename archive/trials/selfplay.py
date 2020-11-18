@@ -2,14 +2,14 @@ from minichess.minichess import MiniChess, TerminalStatus
 from minichess.pieces import PieceColor
 from learning.action import MiniChessAction
 from learning.model import MiniChessModel
-from learning.mcts.mcts import MCTS
+from learning.muzero.mcts.mcts import MCTS
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
 MCTS_FILE = ''
 MCTS_SIMS_PER_STEP = 0
-GAMES = 25
+GAMES = 5
 COUNTER_BREAK = 100
 DEBUG = False
 
@@ -22,10 +22,12 @@ if __name__ == "__main__":
     # init our two players
     
     white_player = MiniChessModel().to(device)
+    black_player = MiniChessModel().to(device)
 
     # loss functions
     loss_fn = torch.nn.NLLLoss()
     white_opt = torch.optim.Adam(white_player.parameters(), lr=1e-3)
+    black_opt = torch.optim.Adam(black_player.parameters(), lr=1e-3)
 
     # init our MCTS
 
@@ -37,22 +39,17 @@ if __name__ == "__main__":
 
         mc = MiniChess()
         if DEBUG: mc.display_ascii()
+        counter = 0
 
         incorrect_move_counter = 0
-        counter = 0
 
         # game loop
         while mc.terminal_status() == TerminalStatus.ONGOING:
 
-            if mc.active_color == PieceColor.BLACK: # simply make a random move
-                mc.make_random_move()
-                counter += 1
-                continue
-            
             if counter >= COUNTER_BREAK: break
 
-            player = white_player
-            opt = white_opt
+            player = white_player if mc.active_color == PieceColor.WHITE else black_player
+            opt = white_opt if mc.active_color == PieceColor.WHITE else black_opt
 
             # get the board in vector form
             vector = torch.from_numpy(mc.current_state().vector()).to(device)
@@ -129,9 +126,7 @@ if __name__ == "__main__":
 
         incorrects.append(incorrect_move_counter)
         if DEBUG: print('{} incorrect moves!'.format(incorrect_move_counter))
-
-        print('Game {} Complete: {}'.format(game_num, mc.terminal_status().name))
-
+        print(game_num)
     mcts.json()
 
     if DEBUG: print(mc.terminal_status())
