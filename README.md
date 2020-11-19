@@ -129,6 +129,81 @@ Error confirmed for Windows, even with running out-of-box experiments.
 
 *[10/30]* Model able to train, improve, and then achieve ideal end-states (victory vs naive opponents, draw vs. itself) using MCTS and conventional neural network.
 
+## Pseudocode
+
+Michael
+1. AlphaZero working
+	- Ability to ingest MetaModel or None
+2. Implement Extinction
+3. Create Skeleton for training
+
+Rishi
+1. Look into Cloud Compute
+2. Figure out paper off of MetaModel
+
+Tag team skeleton and launch train.py
+
+
+1. Look into prebuilt AlphaZero (Michael)
+2. Look into Cloud Compute and parallelizing selfplay / arena play (Rishi)
+3. implement 1 more env (Michael)
+4. Meta Model (Rishi)
+5. model (Michael)
+
+### Testing
+
+```
+
+
+## TRAINING
+model = Model()
+for n in NUM_ITERS: # 1000
+	sample g from [atomic, gardner, dark, rifle, extinction]:
+		run a full alphazero iteration on g with model
+
+## TESTING
+100x:
+sample g from [variations]: (same weight)
+	JOAT play random
+	JOAT play greedy
+	plot / log both of the results
+we will be satisfied if JOAT wins above some threshold of these games, 60%
+JOAT vs random, greedy 20 times given some game state
+
+## META TRAINING
+metamodel = MetaModel() # controls dropout
+
+JOAT model (no grad)
+
+Nx:
+sample g from [varitions]: (uniform)
+	JOAT x meta: same alphazero iteration. 
+
+	MetaModel:
+		outputprobs = [] # differentiable
+
+		r = random.rand()
+
+		binary_str = 0111000, outputprobs
+
+		USE binary_str, calculate backprop with outputprobs
+```
+
+## Eval Metrics
+
+Originally:
+
+Have a fixed model, and a model trained on oneshot, pit against each other, show that win rate is >50%
+
+Now:
+
+JOAT Model #1 - do not apply metamodel, no dropout
+JOAT Model #2 - we do apply
+
+JOAT1 vs JOAT2, evaluate wins
+
+JOAT1 and JOAT2 vs random, greedy, etc. show superiority
+
 ## Objective
 
 TODO
