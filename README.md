@@ -25,15 +25,6 @@ git clone https://github.com/mdhiebert/meta-minichess.git
 cd meta-minichess
 ```
 
-It is recommended to create a conda environment when running meta-minichess games:
-
-```bash
-conda create -n mmc python=3.7.4 anaconda
-conda activate mmc
-```
-
-This repository leverages three separate custom packages: [minichess](https://github.com/mdhiebert/minichess.git), [gym-minichess](https://github.com/mdhiebert/gym-minichess.git), and [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch.git). To install them for use in `meta-minichess`, execute the following lines in the terminal:
-
 ### Automatic
 
 Just run the following script to handle setup:
@@ -44,6 +35,16 @@ Just run the following script to handle setup:
 python scripts/refresh.py --development_dir=<PATH_TO_DEVELOPMENT_DIRECTORY>
 ```
 ### Manual
+
+It is recommended to create a conda environment when running meta-minichess games:
+
+```bash
+conda create -n mmc python=3.7.4 anaconda
+conda activate mmc
+```
+
+This repository leverages three separate custom packages: [minichess](https://github.com/mdhiebert/minichess.git), [gym-minichess](https://github.com/mdhiebert/gym-minichess.git), and [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch.git). To install them for use in `meta-minichess`, execute the following lines in the terminal:
+
 
 First, we install the underlying minichess libraries: 
 
