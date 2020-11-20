@@ -137,7 +137,7 @@ Michael
 3. Create Skeleton for training
 
 Rishi
-1. Look into Cloud Compute
+1. Look into Cloud Compute & Parallelization
 2. Figure out paper off of MetaModel
 
 Tag team skeleton and launch train.py
@@ -176,6 +176,7 @@ JOAT model (no grad)
 
 Nx:
 sample g from [varitions]: (uniform)
+	meta = [JOAT + Dropout](https://stackoverflow.com/questions/41583540/custom-dropout-in-tensorflow)
 	JOAT x meta: same alphazero iteration. 
 
 	MetaModel:
