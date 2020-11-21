@@ -12,6 +12,7 @@
 - [Methodology](#methodology)
 	- [Action Space](#action-space)
 		- [Legality](#legality)
+	- [MCTS](#mcts)
 - [Result Log](#result-log)
     - [Naïve Opening](#naïve-opening)
 - [References](#references)
@@ -224,7 +225,85 @@ This gives us 5x5x(8x4 + 8 + 3x3) = 1225 possible actions to choose from.
 
 Of course. Not all moves are valid at every step. To account for this, we simply apply a mask over illegal moves to our networks output and re-normalize.
 
-TODO
+### MCTS
+
+Pseudocode base off of [alpha-zero-general](https://github.com/suragnair/alpha-zero-general/blob/master/MCTS.py) implementation.
+```
+game <- game()
+net <- net()
+
+Q_sa <- {} # stores Q values for s,a (as defined in the paper)
+N_sa <- {} # stores #times edge s,a was visited
+N_s  <- {} # stores #times board s was visited
+P_s  <- {} # stores initial policy (returned by neural net)
+E_s  <- {} # stores game.getGameEnded ended for board s
+V_s  <- {} # stores game.getValidMoves for board s
+
+board <- current board
+
+for iteration in NUM_MCTS_ITERATIONS:
+	search(board)
+
+counts <- number of times each action was visited from state board
+
+if temp = 0:
+	bestAs <- actions with max count
+	bestA <- sample(bestAs)
+
+	return onehot of len(ACTION_SPACE) with idx bestA = 1
+
+counts <- [x ** (1. / temp) for x in counts]
+
+return counts / sum(counts) # probabilities
+
+
+### SEARCH(board)
+
+state <- board
+
+if state not in E_s:
+	E_s[state] <- status of game
+
+if state.status != ONGOING:
+	return -1 * (value of status)
+
+if s not in P_s:
+	P_s[s] <- net(board) # network prediction of board
+	valid <- all current legal moves from state
+	
+	# mask invalid moves
+	# renormalize
+
+	if all moves were masked:
+		P_s[s] <- (P_s[s] + valids) / P_s[s]
+
+	V_s[s] <- valids
+
+	# pick action with highest upper confidence bound
+	for action in actions:
+		if action is valid:
+			if (s,a) in Q_sa:
+				u <- Q_sa[sa] + CPUCT + P_s[s][action] * sqrt(N_s[s]) / (1 + N_sa[sa])
+			else:
+				u <- CPUCT * P_s[s][action] * sqrt(N_s[s] + eps)
+
+	state <- apply best action to current state
+
+	search(state)
+
+	if (state, action) in Q_sa:
+		Q_sa[(s, a)] <- (N_sa[(s, a)] * Q_sa[(s, a)] + v) / (N_sa[(s, a)] + 1)
+		N_sa[(s, a)] <- N_sa[(s, a)] + 1
+
+	else:
+		Q_sa[(s,a)] <- v
+		N_sa[(s,a)] <- 1
+
+	N_s[s] <- N_s + 1
+
+	return -v
+
+```
 
 ## Result Log
 
