@@ -113,7 +113,7 @@ class JOATCoach():
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > 1:
                 self.terationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
-
+                thread_list = []
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
                     new_mcts = MCTS(game, self.nnet, self.args)  # new search tree
                     thread = threading.Thread(target=self.executeEpisode, args=(new_mcts,))

@@ -66,7 +66,7 @@ class Coach():
             action = np.random.choice(len(pi), p=pi)
             board, curPlayer = self.game.getNextState(board, curPlayer, action)
 
-            r = self.game.getGameEnded(board, self.curPlayer)
+            r = self.game.getGameEnded(board, curPlayer)
             
             moves += 1
 
