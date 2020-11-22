@@ -121,7 +121,7 @@ _crossed-out = DONE_
 		- ~~Changes how observations are generated.~~
 	- [Extinction Chess](https://en.wikipedia.org/wiki/Extinction_chess)
 		- Changes reward function.
-	- [Monochromatic Chess](https://en.wikipedia.org/wiki/Monochromatic_chess)
+	- ~~[Monochromatic Chess](https://en.wikipedia.org/wiki/Monochromatic_chess)~~
 		- Changes legality of moves.
 	- [Portal Chess](https://en.wikipedia.org/wiki/Portal_chess)
 		- Changes action space.
@@ -133,6 +133,8 @@ _crossed-out = DONE_
 - Update `refresh.py` or other setup scripts to work on other OSs
 
 ## Changelog
+*[11/22]* JOAT Infrastructure and Dark/Monochromatic/Bichromatic implementations done.
+
 *[11/18]* Implemented Atomic Chess rule variant.
 
 *[11/15]* Updated `scripts/mcts_sim.py` to support command line arguments to set game.
