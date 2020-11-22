@@ -1,3 +1,4 @@
+from games.gardner import GardnerMiniChessGame
 import sys
 from games import Game
 from games.bichromatic.BichromaticChessLogic import BichromaticChessBoard as Board
@@ -36,51 +37,10 @@ class BichromaticChessGame(Game):
         return b.pieces_without_padding()
 
     def setAllActions(self):
-        self.action_to_id = {}
-        self.id_to_action = {}
-
-        tmp_board = Board(self.n,[
-            [Board.BLANK, Board.BLANK, Board.BLANK, Board.BLANK, Board.BLANK],
-            [Board.BLANK, Board.BLANK, Board.BLANK, Board.BLANK, Board.BLANK],
-            [Board.BLANK, Board.BLANK, Board.BLANK, Board.BLANK, Board.BLANK],
-            [Board.BLANK, Board.BLANK, Board.BLANK, Board.BLANK, Board.BLANK],
-            [Board.BLANK, Board.BLANK, Board.BLANK, Board.BLANK, Board.BLANK],
-        ])
-        piece_types = [Board.ROOK, Board.KNIGHT, Board.BISHOP, Board.QUEEN, Board.KING,Board.PAWN]
-        # piece_types = [Board.PAWN]
-        id = 0
-        for i,piece in enumerate(piece_types):
-            for row in range(0,self.n):
-                for col in range(0,self.n):
-                    tmp_board.set(row,col,piece)
-                    for (p,start,end) in tmp_board._get_legal_moves(1):
-                        key = str(piece)+":"+str(start)+":"+str(end)
-                        self.action_to_id[key] = id
-                        self.id_to_action[id] = (piece,start,end)
-                        id += 1
-                    tmp_board.set(row,col,Board.BLANK)
-
-        piece = Board.PAWN
-        for row in range(0,self.n):
-            for col in range(0,self.n):
-                tmp_board.set(row,col,piece)
-                if piece == Board.PAWN:
-                    if col > 0:
-                        if row < (self.n-1):
-                            tmp_board.set(row+1,col-1,-Board.PAWN)
-                        if row > 0:
-                            tmp_board.set(row-1,col-1,-Board.PAWN)
-                    if col < (self.n-1):
-                        if row < (self.n-1):
-                            tmp_board.set(row+1,col+1,-Board.PAWN)
-                        if row > 0:
-                            tmp_board.set(row-1,col+1,-Board.PAWN)
-                for (p,start,end) in tmp_board._get_legal_moves(1):
-                    key = str(piece)+":"+str(start)+":"+str(end)
-                    if self.action_to_id.get(key) == None:
-                        self.action_to_id[key] = id
-                        self.id_to_action[id] = (piece,start,end)
-                        id += 1
+        g = GardnerMiniChessGame()
+        g.setAllActions()
+        self.id_to_action = g.id_to_action
+        self.action_to_id = g.action_to_id
 
     def getBoardSize(self):
         # (a,b) tuple

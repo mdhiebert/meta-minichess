@@ -34,7 +34,7 @@ class JOATCoach():
     def __init__(self, games, probs, nnet, args):
         self.games = games
         self.probs = probs
-        assert sum(self.probs) == 1
+        assert round(sum(self.probs), 6) == 1, f'Expected probabilites to sum to 1, instead summed to {sum(self.probs)}'
         self.nnet = nnet
         self.pnet = self.nnet.__class__(self.games[0])  # the competitor network
         self.args = args

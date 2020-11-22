@@ -4,8 +4,7 @@ import numpy as np
 
 class DarkBoard(Board):
     def add_darkness(self, player):
-        legal_actions = self.get_legal_moves()
-
+        legal_actions = self.get_legal_moves(player)
 
         flat_pieces = [item for sublist in self.pieces for item in sublist]
 

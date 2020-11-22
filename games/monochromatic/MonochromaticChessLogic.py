@@ -2,7 +2,7 @@ from games.gardner.GardnerMiniChessLogic import Board
 from itertools import count
 import numpy as np
 
-class MonochromaticChessBoard:
+class MonochromaticChessBoard(Board):
     def _get_legal_moves(self,player):
         # For each of our pieces, iterate through each possible 'ray' of moves,
         # as defined in the 'directions' map. The rays are broken e.g. by
