@@ -4,7 +4,6 @@ import sys
 from collections import deque
 from pickle import Pickler, Unpickler
 from random import shuffle
-from minichess.games.abstract.board import AbstractBoardStatus
 
 import numpy as np
 from tqdm import tqdm
@@ -20,13 +19,12 @@ class Coach():
     in Game and NeuralNet. args are specified in main.py.
     """
 
-    def __init__(self, Game, Action, nnet, args):
-        self.Game = Game
+    def __init__(self, game, nnet, args):
+        self.game = game
         self.nnet = nnet
-        self.pnet = self.nnet.__class__(self.Game)  # the competitor network
-        self.Action = Action
+        self.pnet = self.nnet.__class__(self.game)  # the competitor network
         self.args = args
-        self.mcts = MCTS(self.Game, self.Action, self.nnet, self.args)
+        self.mcts = MCTS(self.game, self.nnet, self.args)
         self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
 
@@ -37,38 +35,34 @@ class Coach():
         trainExamples. The game is played till the game ends. After the game
         ends, the outcome of the game is used to assign values to each example
         in trainExamples.
-
         It uses a temp=1 if episodeStep < tempThreshold, and thereafter
         uses temp=0.
-
         Returns:
             trainExamples: a list of examples of the form (canonicalBoard, currPlayer, pi,v)
                            pi is the MCTS informed policy vector, v is +1 if
                            the player eventually won the game, else -1.
         """
         trainExamples = []
-        board = self.Game()
+        board = self.game.getInitBoard()
+        self.curPlayer = 1
         episodeStep = 0
 
         while True:
             episodeStep += 1
+            canonicalBoard = self.game.getCanonicalForm(board, self.curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
 
-            pi = self.mcts.getActionProb(board.copy(), temp=temp)
-
-
-            # TODO
-            # sym = self.game.getSymmetries(canonicalBoard, pi)
-            # for b, p in sym:
-            #     trainExamples.append([b, self.curPlayer, p, None])
+            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
+            sym = self.game.getSymmetries(canonicalBoard, pi)
+            for b, p in sym:
+                trainExamples.append([b, self.curPlayer, p, None])
 
             action = np.random.choice(len(pi), p=pi)
+            board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
 
-            board.push(self.Action.decode(action, board))
+            r = self.game.getGameEnded(board, self.curPlayer)
 
-            r = board.status
-
-            if r != AbstractBoardStatus.ONGOING:
+            if r != 0:
                 return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
 
     def learn(self):
@@ -88,7 +82,7 @@ class Coach():
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-                    self.mcts = MCTS(self.Game, self.Action, self.nnet, self.args)  # reset search tree
+                    self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
                     iterationTrainExamples += self.executeEpisode()
 
                 # save the iteration examples to the history 

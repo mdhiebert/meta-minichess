@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-from minichess.games.gardner.action import LEN_ACTION_SPACE
 
 import numpy as np
 from tqdm import tqdm
@@ -23,13 +22,13 @@ args = dotdict({
     'num_channels': 512,
 })
 
+LEN_ACTION_SPACE = 1225
 
 class NNetWrapper(NeuralNet):
     def __init__(self, game):
         self.nnet = mcnet(game, args)
         self.game = game
-        # self.board_x, self.board_y = (self.game.width, self.game.height)
-        self.board_x, self.board_y = (5, 5)
+        self.board_x, self.board_y = (self.game.n, self.game.n)
         self.action_size = LEN_ACTION_SPACE
 
         if args.cuda:
@@ -84,10 +83,12 @@ class NNetWrapper(NeuralNet):
         # timing
         start = time.time()
 
+        board = np.array(board)
+
         # preparing input
         board = torch.FloatTensor(board.astype(np.float64))
         if args.cuda: board = board.contiguous().cuda()
-        board = board.view(12, self.board_x, self.board_y)
+        board = board.view(1, self.board_x, self.board_y)
         self.nnet.eval()
         with torch.no_grad():
             pi, v = self.nnet(board)

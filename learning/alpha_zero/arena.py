@@ -18,7 +18,6 @@ class Arena():
             display: a function that takes board as input and prints it (e.g.
                      display in othello/OthelloGame). Is necessary for verbose
                      mode.
-
         see othello/OthelloPlayers.py for an example. See pit.py for pitting
         human players/other baselines with each other.
         """
@@ -30,7 +29,6 @@ class Arena():
     def playGame(self, verbose=False):
         """
         Executes one episode of a game.
-
         Returns:
             either
                 winner: player who won the game (1 if player1, -1 if player2)
@@ -66,7 +64,6 @@ class Arena():
         """
         Plays num games in which player1 starts num/2 games and player2 starts
         num/2 games.
-
         Returns:
             oneWon: games won by player1
             twoWon: games won by player2

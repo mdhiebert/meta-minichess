@@ -1,8 +1,6 @@
 import sys
 
-from minichess.games.gardner.action import LEN_ACTION_SPACE
-sys.path.append('..')
-from utils import *
+from learning.alpha_zero.utils import *
 
 import argparse
 import torch
@@ -17,8 +15,8 @@ class MCGardnerNNet(nn.Module):
         # game params
         self.game = game
         # self.board_x, self.board_y = (self.game.width, self.game.height)
-        self.board_x, self.board_y = (5, 5)
-        self.action_size = LEN_ACTION_SPACE
+        self.board_x, self.board_y = (self.game.n, self.game.n)
+        self.action_size = self.game.getActionSize()
         self.args = args
 
         super(MCGardnerNNet, self).__init__()
