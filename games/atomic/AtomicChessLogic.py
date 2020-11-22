@@ -29,7 +29,7 @@ class AtomicBoard(Board):
 
             # explode
             for neighbor in [j-8, j-7, j-6, j-1, j+1, j+6, j+7, j+8]:
-                if abs(flat_pieces[neighbor]) != Board.PAWN:
+                if abs(flat_pieces[neighbor]) not in (Board.PAWN, Board.INF):
                     board = put(board, neighbor, Board.BLANK)
 
             # skip extra logic for piece p

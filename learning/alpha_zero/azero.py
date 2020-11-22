@@ -1,3 +1,4 @@
+from learning.alpha_zero.joat_coach import JOATCoach
 import logging
 
 import coloredlogs
@@ -6,22 +7,25 @@ from learning.alpha_zero.coach import Coach
 from learning.alpha_zero.pytorch.NNet import NNetWrapper as nn
 from learning.alpha_zero.utils import *
 
-# from games.gardner import GardnerMiniChessGame as Game
-# from games.rifle import RifleChessGame as Game
-from games.atomic import AtomicChessGame as Game
+from games.gardner import GardnerMiniChessGame
+from games.baby import BabyChessGame
+from games.mallet import MalletChessGame
+from games.rifle import RifleChessGame
+from games.atomic import AtomicChessGame
+# TODO dark
 
 log = logging.getLogger(__name__)
 
 coloredlogs.install(level='INFO')  # Change this to DEBUG to see more info.
 
 args = dotdict({
-    'numIters': 10,
-    'numEps': 10,              # Number of complete self-play games to simulate during a new iteration.
+    'numIters': 5,
+    'numEps': 5,              # Number of complete self-play games to simulate during a new iteration.
     'tempThreshold': 15,        #
     'updateThreshold': 0.6,     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'maxlenOfQueue': 200000,    # Number of game examples to train the neural networks.
-    'numMCTSSims': 10,          # Number of games moves for MCTS to simulate.
-    'arenaCompare': 40,         # Number of games to play during arena play to determine if new net will be accepted.
+    'numMCTSSims': 5,          # Number of games moves for MCTS to simulate.
+    'arenaComparePerGame': 3,         # Number of games to play during arena play to determine if new net will be accepted.
     'cpuct': 1,
     'maxMoves': 10,
 
@@ -34,11 +38,24 @@ args = dotdict({
 
 
 def main():
-    log.info('Loading %s...', Game.__name__)
-    g = Game()
+
+    # define our game distribution
+    game_probs = [
+        # (GardnerMiniChessGame(), 0.25),
+        # (BabyChessGame(), 0.25),
+        # (MalletChessGame(), 0.25),
+        # (RifleChessGame(), 0.125),
+        # (AtomicChessGame(), 0.125)
+        (AtomicChessGame(), 1)
+    ]
+
+    games,probs = map(list,zip(*game_probs))
+
+
+    log.info('Loading %s...', 'Minichess Variants')
 
     log.info('Loading %s...', nn.__name__)
-    nnet = nn(g)
+    nnet = nn(games[0])
 
     if args.load_model:
         log.info('Loading checkpoint "%s/%s"...', args.load_folder_file)
@@ -46,8 +63,9 @@ def main():
     else:
         log.warning('Not loading a checkpoint!')
 
-    log.info('Loading the Coach...')
-    c = Coach(g, nnet, args)
+    log.info('Loading the JOAT Coach...')
+    c = JOATCoach(games, probs, nnet, args)
+    # c = Coach(g, nnet, args)
 
     if args.load_model:
         log.info("Loading 'trainExamples' from file...")

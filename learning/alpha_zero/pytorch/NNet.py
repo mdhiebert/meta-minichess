@@ -28,7 +28,7 @@ class NNetWrapper(NeuralNet):
     def __init__(self, game):
         self.nnet = mcnet(game, args)
         self.game = game
-        self.board_x, self.board_y = (self.game.n, self.game.n)
+        self.board_x, self.board_y = (5, 5)
         self.action_size = LEN_ACTION_SPACE
 
         if args.cuda:
@@ -82,9 +82,9 @@ class NNetWrapper(NeuralNet):
         """
         # timing
         start = time.time()
-        print(board)
-        board = np.array(board)
 
+        board = np.array(board)
+        board = board[np.newaxis, :, :]
         # preparing input
         board = torch.FloatTensor(board.astype(np.float64))
         if args.cuda: board = board.contiguous().cuda()

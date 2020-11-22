@@ -15,7 +15,7 @@ class MCGardnerNNet(nn.Module):
         # game params
         self.game = game
         # self.board_x, self.board_y = (self.game.width, self.game.height)
-        self.board_x, self.board_y = (self.game.n, self.game.n)
+        self.board_x, self.board_y = (5, 5)
         self.action_size = self.game.getActionSize()
         self.args = args
 
