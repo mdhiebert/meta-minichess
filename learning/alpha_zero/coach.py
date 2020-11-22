@@ -11,6 +11,8 @@ from tqdm import tqdm
 from learning.alpha_zero.arena import Arena
 from learning.alpha_zero.mcts import MCTS
 
+import threading
+
 log = logging.getLogger(__name__)
 
 class Coach():
@@ -89,6 +91,7 @@ class Coach():
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
+
                     self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
                     iterationTrainExamples += self.executeEpisode()
 
@@ -159,3 +162,16 @@ class Coach():
 
             # examples based on the model were already collected (loaded)
             self.skipFirstSelfPlay = True
+
+class EpisodeThread(threading.Thread):
+   def __init__(self, threadID, name, counter, coach, mcts):
+      threading.Thread.__init__(self)
+      self.threadID = threadID
+      self.name = name
+      self.counter = counter
+      self.coach = coach
+      self.mcts = mcts
+   def run(self):
+      print "Starting " + self.name
+      return self.coach.executeEpisode
+      print "Exiting " + self.name
