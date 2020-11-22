@@ -5,6 +5,8 @@ from collections import deque
 from pickle import Pickler, Unpickler
 from random import shuffle
 
+import matplotlib.pyplot as plt
+
 import numpy as np
 from tqdm import tqdm
 
@@ -93,6 +95,8 @@ class JOATCoach():
         only if it wins >= updateThreshold fraction of games.
         """
 
+        losses = []
+
         for i in range(1, self.args.numIters + 1):
 
             # bookkeeping
@@ -100,7 +104,7 @@ class JOATCoach():
             
             game = np.random.choice(self.games, p=self.probs)
 
-            log.info(f'Sampled game {game.__class__} ...')
+            log.info(f'Sampled game {type(game).__name__} ...')
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > 1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
@@ -131,7 +135,11 @@ class JOATCoach():
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             pmcts = MCTS(game, self.pnet, self.args)
 
-            self.nnet.train(trainExamples)
+            pi_v_losses = self.nnet.train(trainExamples)
+
+            for pi,v in pi_v_losses:
+                losses.append((pi, v, type(game).__name__))
+
             nmcts = MCTS(game, self.nnet, self.args)
 
             log.info('PITTING AGAINST PREVIOUS VERSION')
@@ -147,6 +155,8 @@ class JOATCoach():
                 log.info('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+
+            self.plot_current_progress(losses)
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'
@@ -176,3 +186,55 @@ class JOATCoach():
 
             # examples based on the model were already collected (loaded)
             self.skipFirstSelfPlay = True
+
+    def plot_current_progress(self, losses):
+        def uniqueish_color(n):
+            """https://stackoverflow.com/a/17241345"""
+            return plt.cm.gist_ncar(np.random.random(n))
+
+        c_dict = {
+            'GardnerMiniChessGame': (1, 0, 0),
+            'BabyChessGame': (1, 0.5, 0),
+            'MalletChessGame': (1, 1, 0),
+            'RifleChessGame': (0.5, 1, 0),
+            'AtomicChessGame': (0, 1, 0)
+        }
+
+        l_dict = {
+            'GardnerMiniChessGame': [],
+            'BabyChessGame': [],
+            'MalletChessGame': [],
+            'RifleChessGame': [],
+            'AtomicChessGame': []
+        }
+
+        plt.cla()
+        plt.clf()
+
+        for x,loss in enumerate(losses):
+            pi,v,name = loss
+
+            l_dict[name].append((x,pi,v,c_dict[name]))
+
+        for name,game in l_dict.items():
+            if len(game) == 0: continue
+            xs,ys,_,cs = map(list, zip(*game))
+            plt.scatter(xs,ys,c=cs, label=name)
+
+        plt.xlabel('Games')
+        plt.ylabel('Policy Loss')
+        plt.legend()
+        plt.savefig('policy_loss.png')
+
+        plt.cla()
+        plt.clf()
+
+        for name,game in l_dict.items():
+            if len(game) == 0: continue
+            xs,_,ys,cs = map(list, zip(*game))
+            plt.scatter(xs,ys,c=cs, label=name)
+
+        plt.xlabel('Games')
+        plt.ylabel('Policy Loss')
+        plt.legend()
+        plt.savefig('value_loss.png')

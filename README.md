@@ -3,6 +3,7 @@
 ## Contents
 
 - [Contents](#contents)
+- [Quickstart](#quickstart)
 - [Setup](#setup)
 	- [Automatic](#automatic)
 	- [Manual](#manual)
@@ -16,6 +17,30 @@
 - [Result Log](#result-log)
     - [Naïve Opening](#naïve-opening)
 - [References](#references)
+
+## Quickstart
+
+Clone the repository:
+
+```bash
+git clone https://github.com/mdhiebert/meta-minichess.git
+cd meta-minichess
+```
+
+Create conda environment:
+
+```bash
+conda env create -f environment.yml
+conda activate mmc
+```
+
+Launch experiment to train a jack-of-all-trades minichess model:
+
+```bash
+python -m learning.alpha_zero.azero
+```
+
+See progress in terminal and updated loss plots in `./policy_loss.png` and `./value_loss.png`.
 
 ## Setup
 

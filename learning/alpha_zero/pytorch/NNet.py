@@ -40,6 +40,8 @@ class NNetWrapper(NeuralNet):
         """
         optimizer = optim.Adam(self.nnet.parameters())
 
+        losses = []
+
         for epoch in range(args.epochs):
             print('EPOCH ::: ' + str(epoch + 1))
             self.nnet.train()
@@ -69,12 +71,14 @@ class NNetWrapper(NeuralNet):
                 # record loss
                 pi_losses.update(l_pi.item(), boards.size(0))
                 v_losses.update(l_v.item(), boards.size(0))
+                losses.append((l_pi.item(), l_v.item()))
                 t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
 
                 # compute gradient and do SGD step
                 optimizer.zero_grad()
                 total_loss.backward()
                 optimizer.step()
+        return losses
 
     def predict(self, board):
         """
