@@ -19,7 +19,7 @@ class AtomicBoard(Board):
         if abs(flat_pieces[j]) == Board.KING:
             self.player_won = player
 
-        is_capture = flat_pieces[q] == 0
+        is_capture = q != 0
 
 
         # in atomic chess, we remove all non-pawn pieces surrounding captured piece

@@ -82,7 +82,7 @@ class NNetWrapper(NeuralNet):
         """
         # timing
         start = time.time()
-
+        print(board)
         board = np.array(board)
 
         # preparing input

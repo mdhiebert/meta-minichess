@@ -17,8 +17,7 @@ class RifleBoard(Board):
         if abs(flat_pieces[j]) == Board.KING:
             self.player_won = player
 
-        is_capture = flat_pieces[q] == 0
-
+        is_capture = q != 0
 
         # in rifle chess, we do not move on captures
         if is_capture:

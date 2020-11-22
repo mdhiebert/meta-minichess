@@ -10,7 +10,7 @@ class MCTS():
     """
     This class handles the MCTS tree.
     """
-    MAX_TREE_DEPTH = 75
+    MAX_TREE_DEPTH = 50
     def __init__(self, game, nnet, args):
         self.game = game
         self.nnet = nnet
@@ -32,7 +32,6 @@ class MCTS():
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
-            # print(i)
             self.search(canonicalBoard)
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
