@@ -1,3 +1,4 @@
+from games.dark.DarkChessGame import DarkChessGame
 from learning.alpha_zero.joat_coach import JOATCoach
 import logging
 
@@ -12,6 +13,8 @@ from games.baby import BabyChessGame
 from games.mallet import MalletChessGame
 from games.rifle import RifleChessGame
 from games.atomic import AtomicChessGame
+from games.monochromatic import MonochromaticChessGame
+from games.bichromatic import BichromaticChessGame
 # TODO dark
 
 log = logging.getLogger(__name__)
@@ -20,12 +23,12 @@ coloredlogs.install(level='INFO')  # Change this to DEBUG to see more info.
 
 args = dotdict({
     'numIters': 500,
-    'numEps': 25,              # Number of complete self-play games to simulate during a new iteration.
+    'numEps': 100,              # Number of complete self-play games to simulate during a new iteration.
     'tempThreshold': 15,        #
     'updateThreshold': 0.6,     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'maxlenOfQueue': 200000,    # Number of game examples to train the neural networks.
     'numMCTSSims': 25,          # Number of games moves for MCTS to simulate.
-    'arenaComparePerGame': 16,         # Number of games to play during arena play to determine if new net will be accepted.
+    'arenaComparePerGame': 10,         # Number of games to play during arena play to determine if new net will be accepted.
     'cpuct': 1,
     'maxMoves': 75,
 
@@ -41,11 +44,14 @@ def main():
 
     # define our game distribution
     game_probs = [
-        (GardnerMiniChessGame(), 0.25),
-        (BabyChessGame(), 0.25),
-        (MalletChessGame(), 0.25),
-        (RifleChessGame(), 0.125),
-        (AtomicChessGame(), 0.125)
+        (GardnerMiniChessGame(), 0.2),
+        (BabyChessGame(), 0.2),
+        (MalletChessGame(), 0.2),
+        (RifleChessGame(), 0.08),
+        (AtomicChessGame(), 0.08),
+        (DarkChessGame(), 0.08),
+        (MonochromaticChessGame(), 0.08),
+        (BichromaticChessGame(), 0.08)
         # (AtomicChessGame(), 1)
     ]
 

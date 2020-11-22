@@ -140,6 +140,9 @@ class JOATCoach():
             for pi,v in pi_v_losses:
                 losses.append((pi, v, type(game).__name__))
 
+            self.plot_current_progress(losses)
+
+            # ARENA
             nmcts = MCTS(game, self.nnet, self.args)
 
             log.info('PITTING AGAINST PREVIOUS VERSION')
@@ -156,7 +159,6 @@ class JOATCoach():
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
 
-            self.plot_current_progress(losses)
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'
@@ -197,7 +199,10 @@ class JOATCoach():
             'BabyChessGame': (1, 0.5, 0),
             'MalletChessGame': (1, 1, 0),
             'RifleChessGame': (0.5, 1, 0),
-            'AtomicChessGame': (0, 1, 0)
+            'AtomicChessGame': (0, 1, 0),
+            'DarkChessGame': (0, 1, 0.5),
+            'MonochromaticChessGame': (0, 1, 1),
+            'BichromaticChessGame': (0, 0.5, 1)
         }
 
         l_dict = {
@@ -205,7 +210,10 @@ class JOATCoach():
             'BabyChessGame': [],
             'MalletChessGame': [],
             'RifleChessGame': [],
-            'AtomicChessGame': []
+            'AtomicChessGame': [],
+            'DarkChessGame': [],
+            'MonochromaticChessGame': [],
+            'BichromaticChessGame': []
         }
 
         plt.cla()
@@ -235,6 +243,6 @@ class JOATCoach():
             plt.scatter(xs,ys,c=cs, label=name)
 
         plt.xlabel('Games')
-        plt.ylabel('Policy Loss')
+        plt.ylabel('Value Loss')
         plt.legend()
         plt.savefig('value_loss.png')
