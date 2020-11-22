@@ -13,6 +13,8 @@ from tqdm import tqdm
 from learning.alpha_zero.joat_arena import JOATArena as Arena
 from learning.alpha_zero.mcts import MCTS
 
+import threading
+
 log = logging.getLogger(__name__)
 
 class JOATCoach():
@@ -42,7 +44,7 @@ class JOATCoach():
         self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
 
-    def executeEpisode(self, game):
+    def executeEpisode(self, game, mcts):
         """
         This function executes one episode of self-play, starting with player 1.
         As the game is played, each turn is added as a training example to
@@ -58,25 +60,27 @@ class JOATCoach():
         """
         trainExamples = []
         board = game.getInitBoard()
-        self.curPlayer = 1
+        curPlayer = 1
         episodeStep = 0
+
+        new_mcts = mcts
 
         moves = 0
 
         while True:
             episodeStep += 1
-            canonicalBoard = game.getCanonicalForm(board, self.curPlayer)
+            canonicalBoard = game.getCanonicalForm(board, curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
 
-            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
+            pi = new_mcts.getActionProb(canonicalBoard, temp=temp)
             sym = game.getSymmetries(canonicalBoard, pi)
             for b, p in sym:
-                trainExamples.append([b, self.curPlayer, p, None])
+                trainExamples.append([b, curPlayer, p, None])
 
             action = np.random.choice(len(pi), p=pi)
-            board, self.curPlayer = game.getNextState(board, self.curPlayer, action)
+            board, curPlayer = game.getNextState(board, curPlayer, action)
 
-            r = game.getGameEnded(board, self.curPlayer)
+            r = game.getGameEnded(board, curPlayer)
             
             moves += 1
 
@@ -84,7 +88,8 @@ class JOATCoach():
                 r = 1e-4
 
             if r != 0:
-                return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
+                self.iterationTrainExamples += [(x[0], x[2], r * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
+                # return [(x[0], x[2], r * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
 
     def learn(self):
         """
@@ -107,14 +112,16 @@ class JOATCoach():
             log.info(f'Sampled game {type(game).__name__} ...')
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > 1:
-                iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
+                self.terationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-                    self.mcts = MCTS(game, self.nnet, self.args)  # reset search tree
-                    iterationTrainExamples += self.executeEpisode(game)
+                    new_mcts = MCTS(game, self.nnet, self.args)  # new search tree
+                    thread = threading.Thread(target=self.executeEpisode, args=(new_mcts,))
+                    thread_list.append(thread)
+                    thread.start() # appends to iterationTrainExamples in executeEpisode threads
 
                 # save the iteration examples to the history 
-                self.trainExamplesHistory.append(iterationTrainExamples)
+                self.trainExamplesHistory.append(self.iterationTrainExamples)
 
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
                 log.warning(
