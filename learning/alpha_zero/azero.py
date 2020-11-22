@@ -49,10 +49,10 @@ def main():
         (GardnerMiniChessGame(), 0.2),
         (BabyChessGame(), 0.2),
         (MalletChessGame(), 0.2),
-        (RifleChessGame(), 0.1),
-        (AtomicChessGame(), 0.1),
-        (DarkChessGame(), 0.1),
-        (MonochromaticChessGame(), 0.1),
+        (RifleChessGame(), 0.13333333333333333),
+        (AtomicChessGame(), 0.13333333333333333),
+        (DarkChessGame(), 0.13333333333333333),
+        # (MonochromaticChessGame(), 0.1),
         # (BichromaticChessGame(), 0.08)
         # (AtomicChessGame(), 1)
     ]
