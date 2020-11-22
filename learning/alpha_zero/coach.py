@@ -30,7 +30,7 @@ class Coach():
         self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
 
-    def executeEpisode(self):
+    def executeEpisode(self,mcts):
         """
         This function executes one episode of self-play, starting with player 1.
         As the game is played, each turn is added as a training example to
@@ -46,23 +46,25 @@ class Coach():
         """
         trainExamples = []
         board = self.game.getInitBoard()
-        self.curPlayer = 1
+        curPlayer = 1
         episodeStep = 0
+
+        new_mcts = mcts
 
         moves = 0
 
         while True:
             episodeStep += 1
-            canonicalBoard = self.game.getCanonicalForm(board, self.curPlayer)
+            canonicalBoard = self.game.getCanonicalForm(board, curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
 
-            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
+            pi = new_mcts.getActionProb(canonicalBoard, temp=temp)
             sym = self.game.getSymmetries(canonicalBoard, pi)
             for b, p in sym:
-                trainExamples.append([b, self.curPlayer, p, None])
+                trainExamples.append([b, curPlayer, p, None])
 
             action = np.random.choice(len(pi), p=pi)
-            board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
+            board, curPlayer = self.game.getNextState(board, curPlayer, action)
 
             r = self.game.getGameEnded(board, self.curPlayer)
             
@@ -72,7 +74,8 @@ class Coach():
                 r = 1e-4
 
             if r != 0:
-                return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
+                self.iterationTrainExamples += [(x[0], x[2], r * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
+                # return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
 
     def learn(self):
         """
@@ -88,15 +91,17 @@ class Coach():
             log.info(f'Starting Iter #{i} ...')
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > 1:
-                iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
-
+                self.iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
+                
+                thread_list = []
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-
-                    self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
-                    iterationTrainExamples += self.executeEpisode()
+                    new_mcts = MCTS(self.game, self.nnet, self.args)  # new search tree
+                    thread = threading.Thread(target=self.executeEpisode, args=(new_mcts,))
+                    thread_list.append(thread)
+                    thread.start() # appends to iterationTrainExamples in executeEpisode threads
 
                 # save the iteration examples to the history 
-                self.trainExamplesHistory.append(iterationTrainExamples)
+                self.trainExamplesHistory.append(self.iterationTrainExamples)
 
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
                 log.warning(
@@ -163,15 +168,15 @@ class Coach():
             # examples based on the model were already collected (loaded)
             self.skipFirstSelfPlay = True
 
-class EpisodeThread(threading.Thread):
-   def __init__(self, threadID, name, counter, coach, mcts):
-      threading.Thread.__init__(self)
-      self.threadID = threadID
-      self.name = name
-      self.counter = counter
-      self.coach = coach
-      self.mcts = mcts
-   def run(self):
-      print "Starting " + self.name
-      return self.coach.executeEpisode
-      print "Exiting " + self.name
+# class EpisodeThread(threading.Thread):
+#    def __init__(self, threadID, name, counter, coach, mcts):
+#       threading.Thread.__init__(self)
+#       self.threadID = threadID
+#       self.name = name
+#       self.counter = counter
+#       self.coach = coach
+#       self.mcts = mcts
+#    def run(self):
+#       print "Starting " + self.name
+#       return self.coach.executeEpisode
+#       print "Exiting " + self.name
