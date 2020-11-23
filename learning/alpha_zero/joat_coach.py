@@ -112,7 +112,7 @@ class JOATCoach():
             log.info(f'Sampled game {type(game).__name__} ...')
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > 1:
-                self.terationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
+                self.iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
                 thread_list = []
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
                     new_mcts = MCTS(game, self.nnet, self.args)  # new search tree
@@ -197,9 +197,9 @@ class JOATCoach():
             self.skipFirstSelfPlay = True
 
     def plot_current_progress(self, losses):
-        def uniqueish_color(n):
-            """https://stackoverflow.com/a/17241345"""
-            return plt.cm.gist_ncar(np.random.random(n))
+        # def uniqueish_color(n):
+        #     """https://stackoverflow.com/a/17241345"""
+        #     return plt.cm.gist_ncar(np.random.random(n))
 
         c_dict = {
             'GardnerMiniChessGame': (1, 0, 0),
