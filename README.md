@@ -34,10 +34,10 @@ conda env create -f environment.yml
 conda activate mmc
 ```
 
-Launch experiment to train a jack-of-all-trades minichess model:
+Launch experiment to train a jack-of-all-trades minichess model with distributed computing:
 
 ```bash
-python -m learning.alpha_zero.azero
+python -m learning.alpha_zero.dist.azero
 ```
 
 See progress in terminal and updated loss plots in `./policy_loss.png` and `./value_loss.png`.
