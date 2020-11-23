@@ -227,7 +227,7 @@ class JOATCoach():
         for name,game in l_dict.items():
             if len(game) == 0: continue
             xs,ys,_,cs = map(list, zip(*game))
-            plt.scatter(xs,ys,c=cs, label=name)
+            plt.scatter(xs,ys,c=cs, label=name, s=10)
 
         plt.xlabel('Games')
         plt.ylabel('Policy Loss')
@@ -240,7 +240,7 @@ class JOATCoach():
         for name,game in l_dict.items():
             if len(game) == 0: continue
             xs,_,ys,cs = map(list, zip(*game))
-            plt.scatter(xs,ys,c=cs, label=name)
+            plt.scatter(xs,ys,c=cs, label=name, s=10)
 
         plt.xlabel('Games')
         plt.ylabel('Value Loss')
