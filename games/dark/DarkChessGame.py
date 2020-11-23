@@ -15,25 +15,25 @@ class DarkChessGame(Game):
     def getInitBoard(self):
         sys.setrecursionlimit(DarkChessGame.RECURSION_LIMIT)
         # return initial board (numpy board)
-        # true_b = Board(self.n,
-        #     [
-        #         #  Representation of Gardner Board
-        #         #
-        #         # 5    ♜ ♞ ♝ ♛ ♚
-        #         # 4    ♟ ♟ ♟ ♟ ♟
-        #         # 3    ·  ·  ·  ·  ·
-        #         # 2    ♙ ♙ ♙ ♙ ♙
-        #         # 1    ♖ ♘ ♗ ♕ ♔
-        #         #
-        #         #      a  b  c  d  e
+        true_b = Board(self.n,
+            [
+                #  Representation of Gardner Board
+                #
+                # 5    ♜ ♞ ♝ ♛ ♚
+                # 4    ♟ ♟ ♟ ♟ ♟
+                # 3    ·  ·  ·  ·  ·
+                # 2    ♙ ♙ ♙ ♙ ♙
+                # 1    ♖ ♘ ♗ ♕ ♔
+                #
+                #      a  b  c  d  e
 
-        #         [-Board.ROOK, -Board.KNIGHT, -Board.BISHOP, -Board.QUEEN, -Board.KING],
-        #         [-Board.PAWN, -Board.PAWN, -Board.PAWN, -Board.PAWN, -Board.PAWN],
-        #         [Board.BLANK, Board.BLANK,   Board.BLANK,   Board.BLANK, Board.BLANK],
-        #         [Board.PAWN, Board.PAWN, Board.PAWN, Board.PAWN, Board.PAWN],
-        #         [Board.ROOK, Board.KNIGHT, Board.BISHOP, Board.QUEEN, Board.KING],
-        #     ]
-        # )
+                [-Board.ROOK, -Board.KNIGHT, -Board.BISHOP, -Board.QUEEN, -Board.KING],
+                [-Board.PAWN, -Board.PAWN, -Board.PAWN, -Board.PAWN, -Board.PAWN],
+                [Board.BLANK, Board.BLANK,   Board.BLANK,   Board.BLANK, Board.BLANK],
+                [Board.PAWN, Board.PAWN, Board.PAWN, Board.PAWN, Board.PAWN],
+                [Board.ROOK, Board.KNIGHT, Board.BISHOP, Board.QUEEN, Board.KING],
+            ]
+        )
 
         obs_b = Board(self.n,
             [
@@ -54,7 +54,7 @@ class DarkChessGame(Game):
                 [Board.ROOK, Board.KNIGHT, Board.BISHOP, Board.QUEEN, Board.KING],
             ]
         )
-        return obs_b.pieces_without_padding()
+        return true_b.pieces_without_padding()
 
     def setAllActions(self):
         self.action_to_id = {}
@@ -152,6 +152,11 @@ class DarkChessGame(Game):
         return 1e-4
 
     def getCanonicalForm(self, board, player):
+        # add "darkness" to the board (make tiles we cant move to 0)
+        value =  [[j*player for j in i] for i in board]
+        return value
+
+    def getDarkness(self, board, player):
         # add "darkness" to the board (make tiles we cant move to 0)
         b = Board(self.n, board)
         return b.add_darkness(player)

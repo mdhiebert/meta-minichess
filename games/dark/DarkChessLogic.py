@@ -14,7 +14,7 @@ class DarkBoard(Board):
         # let us see all of our own pieces
         for i in range(len(flat_pieces)):
             if flat_pieces[i] * player > 0:
-                flat_dark[i] = flat_pieces * player
+                flat_dark[i] = flat_pieces[i] * player
 
         for _,_,j in legal_actions:
             flat_dark[j] = flat_pieces[j] * player

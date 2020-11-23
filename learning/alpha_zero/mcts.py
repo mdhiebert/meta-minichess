@@ -1,3 +1,4 @@
+from games.dark.DarkChessGame import DarkChessGame
 import logging
 import math
 import numpy as np
@@ -78,7 +79,12 @@ class MCTS():
 
         if s not in self.Ps:
             # leaf node
-            self.Ps[s], v = self.nnet.predict(canonicalBoard)
+            if type(self.game) == DarkChessGame:
+                self.Ps[s], v = self.nnet.predict(self.game.getDarkness(canonicalBoard, 1))
+            else:
+                self.Ps[s], v = self.nnet.predict(canonicalBoard)
+            # self.Ps[s], v = self.nnet.predict(canonicalBoard)
+
             valids = self.game.getValidMoves(canonicalBoard, 1)
             sum_Ps_s = np.sum(self.Ps[s])
             # print(sum_Ps_s)
