@@ -22,15 +22,15 @@ log = logging.getLogger(__name__)
 coloredlogs.install(level='INFO')  # Change this to DEBUG to see more info.
 
 args = dotdict({
-    'numIters': 500,
+    'numIters': 100,
     'numEps': 100,              # Number of complete self-play games to simulate during a new iteration.
     'tempThreshold': 15,        #
     'updateThreshold': 0.6,     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'maxlenOfQueue': 200000,    # Number of game examples to train the neural networks.
-    'numMCTSSims': 50,          # Number of games moves for MCTS to simulate.
+    'numMCTSSims': 200,          # Number of games moves for MCTS to simulate.
     'arenaComparePerGame': 10,         # Number of games to play during arena play to determine if new net will be accepted.
     'cpuct': 1,
-    'maxMoves': 75,
+    'maxMoves': 100,
 
     'cuda': True,
 
@@ -45,25 +45,28 @@ args = dotdict({
 def main():
 
     # define our game distribution
-    game_probs = [
-        (GardnerMiniChessGame(), 0.2),
-        (BabyChessGame(), 0.2),
-        (MalletChessGame(), 0.2),
-        (RifleChessGame(), 0.13333333333333333),
-        (AtomicChessGame(), 0.13333333333333333),
-        (DarkChessGame(), 0.13333333333333333),
-        # (MonochromaticChessGame(), 0.1),
-        # (BichromaticChessGame(), 0.08)
-        # (AtomicChessGame(), 1)
-    ]
+    # game_probs = [
+    #     (GardnerMiniChessGame(), 0.2),
+    #     (BabyChessGame(), 0.2),
+    #     (MalletChessGame(), 0.2),
+    #     (RifleChessGame(), 0.13333333333333333),
+    #     (AtomicChessGame(), 0.13333333333333333),
+    #     (DarkChessGame(), 0.13333333333333333),
+    #     # (MonochromaticChessGame(), 0.1),
+    #     # (BichromaticChessGame(), 0.08)
+    #     # (AtomicChessGame(), 1)
+    # ]
+    # games,probs = map(list,zip(*game_probs))
 
-    games,probs = map(list,zip(*game_probs))
+    game = GardnerMiniChessGame()
+
 
 
     log.info('Loading %s...', 'Minichess Variants')
 
     log.info('Loading %s...', nn.__name__)
-    nnet = nn(games[0])
+    # nnet = nn(games[0])
+    nnet = nn(game)
 
     if args.load_model:
         log.info('Loading checkpoint "%s/%s"...', args.load_folder_file)
@@ -72,8 +75,8 @@ def main():
         log.warning('Not loading a checkpoint!')
 
     log.info('Loading the JOAT Coach...')
-    c = JOATCoach(games, probs, nnet, args)
-    # c = Coach(g, nnet, args)
+    # c = JOATCoach(games, probs, nnet, args)
+    c = Coach(game, nnet, args)
 
     if args.load_model:
         log.info("Loading 'trainExamples' from file...")
