@@ -1,6 +1,6 @@
 import sys
 
-from learning.alpha_zero.dist.utils import *
+from learning.alpha_zero.distributed.utils import *
 
 import argparse
 import torch

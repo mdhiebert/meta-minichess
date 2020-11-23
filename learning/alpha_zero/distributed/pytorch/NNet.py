@@ -5,8 +5,8 @@ import time
 import numpy as np
 from tqdm import tqdm
 
-from learning.alpha_zero.dist.utils import *
-from learning.alpha_zero.dist.pytorch.NeuralNet import NeuralNet
+from learning.alpha_zero.distributed.utils import *
+from learning.alpha_zero.distributed.pytorch.NeuralNet import NeuralNet
 
 import torch
 import torch.optim as optim

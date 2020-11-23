@@ -1,4 +1,4 @@
-from learning.alpha_zero.dist.mcts import MCTS
+from learning.alpha_zero.distributed.mcts import MCTS
 import logging
 from multiprocessing import Pool
 import time

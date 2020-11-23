@@ -1,12 +1,12 @@
 from games.dark.DarkChessGame import DarkChessGame
-from learning.alpha_zero.dist.joat_coach import JOATCoach
+from learning.alpha_zero.distributed.joat_coach import JOATCoach
 import logging
 
 import coloredlogs
 
-from learning.alpha_zero.dist.coach import Coach
-from learning.alpha_zero.dist.pytorch.NNet import NNetWrapper as nn
-from learning.alpha_zero.dist.utils import *
+from learning.alpha_zero.distributed.coach import Coach
+from learning.alpha_zero.distributed.pytorch.NNet import NNetWrapper as nn
+from learning.alpha_zero.distributed.utils import *
 
 from games.gardner import GardnerMiniChessGame
 from games.baby import BabyChessGame
