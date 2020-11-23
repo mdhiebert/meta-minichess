@@ -133,6 +133,8 @@ _crossed-out = DONE_
 - Update `refresh.py` or other setup scripts to work on other OSs
 
 ## Changelog
+*[11/23]* Implemented distributed self-play and arena-play.
+
 *[11/22]* JOAT Infrastructure and Dark/Monochromatic/Bichromatic implementations done.
 
 *[11/18]* Implemented Atomic Chess rule variant.
