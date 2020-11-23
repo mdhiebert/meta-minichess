@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 from collections import deque
-import dill
 from pickle import Pickler, Unpickler
 from random import shuffle
 
