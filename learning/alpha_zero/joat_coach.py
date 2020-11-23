@@ -116,7 +116,7 @@ class JOATCoach():
                 thread_list = []
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
                     new_mcts = MCTS(game, self.nnet, self.args)  # new search tree
-                    thread = threading.Thread(target=self.executeEpisode, args=(new_mcts,))
+                    thread = threading.Thread(target=self.executeEpisode, args=(game, new_mcts))
                     thread_list.append(thread)
                     thread.start() # appends to iterationTrainExamples in executeEpisode threads
 
