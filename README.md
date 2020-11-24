@@ -137,6 +137,8 @@ _crossed-out = DONE_
 - Update `refresh.py` or other setup scripts to work on other OSs
 
 ## Changelog
+*[11/24]* Added `scripts/train.py` to facilitate training. Added ability to bypass Arena play and evaluate against random/greedy benchmarks. Modified all games to produce greedy/random players for evaluation.
+
 *[11/23]* Implemented distributed self-play and arena-play.
 
 *[11/22]* JOAT Infrastructure and Dark/Monochromatic/Bichromatic implementations done.

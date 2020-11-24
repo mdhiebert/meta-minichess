@@ -274,7 +274,7 @@ class JOATCoach():
         plt.plot(win_rates, c='r')
 
         plt.title('Win Rate vs {}'.format(opponent))
-        plt.xlabel('Epochs (~10^2 Games)')
+        plt.xlabel('Iteration (~10^2 Games)')
         plt.ylabel('Win Rate')
         plt.legend()
         plt.savefig(f'win_rates_{opponent}.png')
