@@ -5,6 +5,8 @@ from collections import deque
 from pickle import Pickler, Unpickler
 from random import shuffle
 
+from learning.alpha_zero.distributed.utils import run_apply_async_multiprocessing
+
 import itertools
 
 import matplotlib.pyplot as plt
@@ -45,8 +47,6 @@ class JOATCoach():
         self.mcts = None
         self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
-
-        self.pool = Pool(self.args['numWorkers'])
 
     def executeEpisode(self, mcts, game, args):
         """
@@ -106,8 +106,6 @@ class JOATCoach():
         for i in range(1, self.args['numIters'] + 1):
 
 
-            pool = Pool(self.args['numWorkers'])
-
             # bookkeeping
             log.info(f'Starting Iter #{i} ...')
             
@@ -118,17 +116,7 @@ class JOATCoach():
             if not self.skipFirstSelfPlay or i > 1:
                 iterationTrainExamples = deque([], maxlen=self.args['maxlenOfQueue'])
 
-                import time
-
-                now = time.time()
-
-                log.info('Beginning self-play:')
-
-                iterationTrainExamples = pool.starmap(self.executeEpisode, [(MCTS(game, self.nnet, self.args), type(game)(), self.args.copy())] * self.args['numEps'])
-
-                pool.close()
-                
-                print(f'Took {time.time() - now}s')
+                iterationTrainExamples = run_apply_async_multiprocessing(self.executeEpisode, [(MCTS(game, self.nnet, self.args), type(game)(), self.args.copy())] * self.args['numEps'], self.args['numWorkers'], desc='Self Play')
 
                 iterationTrainExamples = list(itertools.chain.from_iterable(iterationTrainExamples))
 

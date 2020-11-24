@@ -1,3 +1,6 @@
+from tqdm import tqdm
+from multiprocessing import Pool
+
 class AverageMeter(object):
     """From https://github.com/pytorch/examples/blob/master/imagenet/main.py"""
 
@@ -20,3 +23,15 @@ class AverageMeter(object):
 class dotdict(dict):
     def __getattr__(self, name):
         return self[name]
+
+def run_apply_async_multiprocessing(func, argument_list, num_processes, desc=''):
+    '''https://leimao.github.io/blog/Python-tqdm-Multiprocessing/'''
+    pool = Pool(processes=num_processes)
+
+    jobs = [pool.apply_async(func=func, args=(*argument,)) if isinstance(argument, tuple) else pool.apply_async(func=func, args=(argument,)) for argument in argument_list]
+    pool.close()
+    result_list_tqdm = []
+    for job in tqdm(jobs, desc=desc):
+        result_list_tqdm.append(job.get())
+
+    return result_list_tqdm

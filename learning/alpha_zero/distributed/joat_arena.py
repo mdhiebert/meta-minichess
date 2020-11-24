@@ -4,6 +4,8 @@ from multiprocessing import Pool
 import time
 import numpy as np
 
+from learning.alpha_zero.distributed.utils import run_apply_async_multiprocessing
+
 from tqdm import tqdm
 
 log = logging.getLogger(__name__)
@@ -83,53 +85,14 @@ class JOATArena():
         for game in games:
             fargs.extend([(MCTS(game, pnet, args), MCTS(game, nnet, args), game)] * num)
 
-        log.info('Starting Arena #1...')
-
-        now = time.time()
-
-        pool = Pool(num_workers)
-
-        results = pool.starmap(self.playGame, fargs)
-
-        pool.close()
-
-        log.info(f'Took {time.time() - now}s')
-
-        # for game in self.games:
-        #     for _ in tqdm(range(num), desc=f"Arena.playGames {type(game).__name__} (1)"):
-        #         gameResult = self.playGame(game, verbose=verbose)
-                # if gameResult == 1:
-                #     oneWon += 1
-                # elif gameResult == -1:
-                #     twoWon += 1
-                # else:
-                #     draws += 1
-
-        # self.player1, self.player2 = self.player2, self.player1
+        results = run_apply_async_multiprocessing(self.playGame, fargs, num_workers, desc='Arena #1')
 
         fargs = []
 
         for game in games:
             fargs.extend([(MCTS(game, nnet, args), MCTS(game, pnet, args), game)] * num)
 
-        log.info('Starting Arena #2...')
-
-        pool = Pool(num_workers)
-
-        second_results = pool.starmap(self.playGame, fargs)
-
-        pool.close()
-
-        log.info(f'Took {time.time() - now}s')
-
-            # for _ in tqdm(range(num), desc=f"Arena.playGames {type(game).__name__} (2)"):
-            #     gameResult = self.playGame(game, verbose=verbose)
-            #     if gameResult == -1:
-            #         oneWon += 1
-            #     elif gameResult == 1:
-            #         twoWon += 1
-            #     else:
-            #         draws += 1
+        second_results = run_apply_async_multiprocessing(self.playGame, fargs, num_workers, desc='Arena #2')
 
         for gameResult in results:
             if gameResult == 1:

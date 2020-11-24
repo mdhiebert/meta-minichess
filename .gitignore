@@ -1,5 +1,8 @@
 mcts_data/
 *.code-workspace
+.vscode
+
+temp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
