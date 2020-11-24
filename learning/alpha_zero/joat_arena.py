@@ -47,7 +47,13 @@ class JOATArena():
                 assert self.display
                 print("Turn ", str(it), "Player ", str(curPlayer))
                 self.display(board)
-            action = players[curPlayer + 1](game.getCanonicalForm(board, curPlayer))
+
+            if players[curPlayer + 1] == 'random':
+                action = game.getRandomMove(game.getCanonicalForm(board, curPlayer), curPlayer)
+            elif players[curPlayer + 1] == 'greedy':
+                action = game.getGreedyMove(game.getCanonicalForm(board, curPlayer), curPlayer)
+            else:
+                action = players[curPlayer + 1](game.getCanonicalForm(board, curPlayer))
 
             valids = game.getValidMoves(game.getCanonicalForm(board, curPlayer), 1)
 
@@ -61,6 +67,45 @@ class JOATArena():
             print("Game over: Turn ", str(it), "Result ", str(game.getGameEnded(board, 1)))
             self.display(board)
         return curPlayer * game.getGameEnded(board, curPlayer)
+
+    def playGames(self, num, verbose=False):
+        """
+        Plays num games in which player1 starts num/2 games and player2 starts
+        num/2 games.
+
+        Returns:
+            oneWon: games won by player1
+            twoWon: games won by player2
+            draws:  games won by nobody
+        """
+
+        num = int(num / 2)
+        oneWon = 0
+        twoWon = 0
+        draws = 0
+
+        for game in self.games:
+            for _ in tqdm(range(num), desc=f"Arena.playGames {type(game).__name__} (1)"):
+                gameResult = self.playGame(game, verbose=verbose)
+                if gameResult == 1:
+                    oneWon += 1
+                elif gameResult == -1:
+                    twoWon += 1
+                else:
+                    draws += 1
+
+            self.player1, self.player2 = self.player2, self.player1
+
+            for _ in tqdm(range(num), desc=f"Arena.playGames {type(game).__name__} (2)"):
+                gameResult = self.playGame(game, verbose=verbose)
+                if gameResult == -1:
+                    oneWon += 1
+                elif gameResult == 1:
+                    twoWon += 1
+                else:
+                    draws += 1
+
+        return oneWon, twoWon, draws
 
     def playGames(self, num, verbose=False):
         """

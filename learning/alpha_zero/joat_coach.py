@@ -96,6 +96,8 @@ class JOATCoach():
         """
 
         losses = []
+        rwinrates = []
+        gwinrates = []
 
         for i in range(1, self.args.numIters + 1):
 
@@ -142,22 +144,39 @@ class JOATCoach():
 
             self.plot_current_progress(losses)
 
-            # ARENA
             nmcts = MCTS(game, self.nnet, self.args)
+            if self.args.arenaComparePerGame > 0:
+                # ARENA
 
-            log.info('PITTING AGAINST PREVIOUS VERSION')
-            arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
-                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.games)
-            pwins, nwins, draws = arena.playGames(self.args.arenaComparePerGame)
+                log.info('PITTING AGAINST PREVIOUS VERSION')
+                arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
+                            lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.games)
+                pwins, nwins, draws = arena.playGames(self.args.arenaComparePerGame)
 
-            log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
-            if pwins + nwins == 0 or float(nwins) / (pwins + nwins) < self.args.updateThreshold:
-                log.info('REJECTING NEW MODEL')
-                self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+                log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
+                if pwins + nwins == 0 or float(nwins) / (pwins + nwins) < self.args.updateThreshold:
+                    log.info('REJECTING NEW MODEL')
+                    self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+                else:
+                    log.info('ACCEPTING NEW MODEL')
+                    self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
+                    self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
             else:
-                log.info('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+
+            if self.args.evalOnBaselines:
+                arena = Arena('random',
+                            lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.games)
+                pwins, nwins, draws = arena.playGames(self.args.arenaComparePerGame)
+                rwinrates.append(float(nwins) / float(pwins + nwins + draws))
+                self.plot_win_rate(rwinrates, 'Random')
+
+                arena = Arena('greedy',
+                            lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.games)
+                pwins, nwins, draws = arena.playGames(self.args.arenaComparePerGame)
+                gwinrates.append(float(nwins) / float(pwins + nwins + draws))
+                self.plot_win_rate(gwinrates, 'Greedy')
 
 
     def getCheckpointFile(self, iteration):
@@ -229,7 +248,7 @@ class JOATCoach():
             xs,ys,_,cs = map(list, zip(*game))
             plt.scatter(xs,ys,c=cs, label=name, s=10)
 
-        plt.xlabel('Games')
+        plt.xlabel('Epochs (~10^2 Games)')
         plt.ylabel('Policy Loss')
         plt.legend()
         plt.savefig('policy_loss.png')
@@ -242,7 +261,20 @@ class JOATCoach():
             xs,_,ys,cs = map(list, zip(*game))
             plt.scatter(xs,ys,c=cs, label=name, s=10)
 
-        plt.xlabel('Games')
+        plt.xlabel('Epochs (~10^2 Games)')
         plt.ylabel('Value Loss')
         plt.legend()
         plt.savefig('value_loss.png')
+
+    def plot_win_rate(self, win_rates, opponent):
+
+        plt.cla()
+        plt.clf()
+
+        plt.plot(win_rates, c='r')
+
+        plt.title('Win Rate vs {}'.format(opponent))
+        plt.xlabel('Epochs (~10^2 Games)')
+        plt.ylabel('Win Rate')
+        plt.legend()
+        plt.savefig(f'win_rates_{opponent}.png')

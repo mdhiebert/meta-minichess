@@ -23,16 +23,16 @@ coloredlogs.install(level='INFO')  # Change this to DEBUG to see more info.
 
 args = dict({
     'numIters': 500,
-    'numEps': 10,              # Number of complete self-play games to simulate during a new iteration.
+    'numEps': 100,              # Number of complete self-play games to simulate during a new iteration.
     'tempThreshold': 15,        #
     'updateThreshold': 0.6,     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'maxlenOfQueue': 200000,    # Number of game examples to train the neural networks.
-    'numMCTSSims': 50,          # Number of games moves for MCTS to simulate.
-    'arenaComparePerGame': 10,         # Number of games to play during arena play to determine if new net will be accepted.
+    'numMCTSSims': 200,          # Number of games moves for MCTS to simulate.
+    'arenaComparePerGame': 40,         # Number of games to play during arena play to determine if new net will be accepted.
     'cpuct': 1,
     'maxMoves': 75,
 
-    'numWorkers': 10,
+    'numWorkers': 8,
     'cuda': True,
 
     'checkpoint': './temp/',
@@ -47,12 +47,13 @@ def main():
 
     # define our game distribution
     game_probs = [
-        (GardnerMiniChessGame(), 0.2),
-        (BabyChessGame(), 0.2),
-        (MalletChessGame(), 0.2),
-        (RifleChessGame(), 0.13333333333333333),
-        (AtomicChessGame(), 0.13333333333333333),
-        (DarkChessGame(), 0.13333333333333333),
+        (GardnerMiniChessGame(), 1),
+        # (GardnerMiniChessGame(), 0.2),
+        # (BabyChessGame(), 0.2),
+        # (MalletChessGame(), 0.2),
+        # (RifleChessGame(), 0.13333333333333333),
+        # (AtomicChessGame(), 0.13333333333333333),
+        # (DarkChessGame(), 0.13333333333333333),
         # (MonochromaticChessGame(), 0.1),
         # (BichromaticChessGame(), 0.08)
         # (AtomicChessGame(), 1)

@@ -49,7 +49,12 @@ class JOATArena():
 
             # lambda x: np.argmax(pmcts.getActionProb(x, temp=0))
 
-            action = np.argmax(players[curPlayer + 1].getActionProb(game.getCanonicalForm(board, curPlayer)))
+            if players[curPlayer + 1] == 'random':
+                action = game.getRandomMove(game.getCanonicalForm(board, curPlayer), curPlayer)
+            elif players[curPlayer + 1] == 'greedy':
+                action = game.getGreedyMove(game.getCanonicalForm(board, curPlayer), curPlayer)
+            else:
+                action = np.argmax(players[curPlayer + 1].getActionProb(game.getCanonicalForm(board, curPlayer)))
 
             valids = game.getValidMoves(game.getCanonicalForm(board, curPlayer), 1)
 
@@ -83,14 +88,20 @@ class JOATArena():
         fargs = []
 
         for game in games:
-            fargs.extend([(MCTS(game, pnet, args), MCTS(game, nnet, args), game)] * num)
+            if pnet in ['greedy', 'random']:
+                fargs.extend([(pnet, MCTS(game, nnet, args), game)] * num)
+            else:
+                fargs.extend([(MCTS(game, pnet, args), MCTS(game, nnet, args), game)] * num)
 
         results = run_apply_async_multiprocessing(self.playGame, fargs, num_workers, desc='Arena #1')
 
         fargs = []
 
         for game in games:
-            fargs.extend([(MCTS(game, nnet, args), MCTS(game, pnet, args), game)] * num)
+            if pnet in ['greedy', 'random']:
+                fargs.extend([(MCTS(game, nnet, args), pnet, game)] * num)
+            else:
+                fargs.extend([(MCTS(game, nnet, args), MCTS(game, pnet, args), game)] * num)
 
         second_results = run_apply_async_multiprocessing(self.playGame, fargs, num_workers, desc='Arena #2')
 

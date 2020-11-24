@@ -37,8 +37,12 @@ conda activate mmc
 Launch experiment to train a jack-of-all-trades minichess model with distributed computing:
 
 ```bash
-python -m learning.alpha_zero.distributed.azero
+python -m scripts.train --workers=8 --games gardner mallet baby rifle dark atomic --eval_on_baselines --arenapergame=0
 ```
+
+To use more workers, simply bump up the `--workers=` value.
+
+
 
 See progress in terminal and updated loss plots in `./policy_loss.png` and `./value_loss.png`.
 

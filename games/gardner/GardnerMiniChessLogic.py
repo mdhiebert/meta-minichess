@@ -8,6 +8,7 @@ Date: May 15, 2018.
 """
 
 from __future__ import print_function
+import random
 import re, sys, time
 from itertools import count
 from collections import OrderedDict, namedtuple
@@ -121,6 +122,10 @@ class Board:
                 min_val = flat_pieces[end]
         if attack_move == None: attack_move = moves[0] # Some random move if no attack move exists
         return attack_move
+
+    def random_move(self, player):
+        moves = [x for x in self._get_legal_moves(player)]
+        return random.choice(moves)
 
     def _get_legal_moves(self,player):
         # For each of our pieces, iterate through each possible 'ray' of moves,

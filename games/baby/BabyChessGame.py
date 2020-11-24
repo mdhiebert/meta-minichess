@@ -124,6 +124,12 @@ class BabyChessGame(Game):
         key = str(p) + ":" + str(x) + ":" + str(y)
         return self.action_to_id[key]
 
+    def getRandomMove(self, board, player):
+        b = Board(self.n, board)
+        p,x,y = b.random_move(player)
+        key = str(p) + ":" + str(x) + ":" + str(y)
+        return self.action_to_id[key]
+
     def getGameEnded(self, board, player):
         # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
         # player = 1
