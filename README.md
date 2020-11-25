@@ -7,6 +7,7 @@
 - [Setup](#setup)
 	- [Automatic](#automatic)
 	- [Manual](#manual)
+	- [GCloud](#gcloud)
 - [To-Do](#to-do)
 - [Changelog](#changelog)
 - [Objective](#objective)
@@ -105,6 +106,43 @@ We can train a model on the standard Gardner ruleset with:
 ```bash
 python main.py --env minichess-gardner-v0 --case minichess --opr train --force
 ```
+
+### GCloud
+
+Spin up a VM instance via Google Cloud Compute Engine
+
+- May run into specifications and limits based upon numbers of vCPUs wanted and region/zone of hosting
+
+Download [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstart) Locally
+
+[Upload files to VM via SCP](https://cloud.google.com/compute/docs/instances/transfer-files#transfergcloud)
+
+```bash
+gcloud compute scp --recurse meta-minichess/ instance-name:~
+```
+
+[Download and Install Anaconda](https://medium.com/google-cloud/set-up-anaconda-under-google-cloud-vm-on-windows-f71fc1064bd7)
+
+First, SSH into the VM
+
+```bash
+gcloud compute ssh instance-name
+```
+
+Once in, install basic tools, download the latest Anaconda distribution, execute the shell script, and then reset the bash commands.
+
+```instance bash
+sudo apt-get update
+sudo apt-get install bzip2 libxml2-dev
+sudo apt-get install wget
+wget https://repo.anaconda.com/archive/Anaconda3-2020.11-Linux-x86_64.sh
+bash Anaconda3-2020.11-Linux-x86_64.sh
+rm Anaconda3-2020.11-Linux-x86_64.sh
+source .bashrc
+```
+
+Now, it's ready to follow Quickstart Guide above!
+
 
 ## To-Do
 
