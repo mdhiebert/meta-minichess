@@ -106,8 +106,6 @@ if __name__ == "__main__": # for multiprocessing
         from learning.alpha_zero.pytorch.NNet import NNetWrapper as nn
         from learning.alpha_zero.utils import *
 
-    print(train_args['arenaComparePerGame'])
-
     log.info('Loading %s...', 'Minichess Variants')
 
     log.info('Loading %s...', nn.__name__)

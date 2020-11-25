@@ -170,7 +170,7 @@ class JOATCoach():
 
             if self.args['evalOnBaselines']:
                 mod_args = self.args.copy()
-                mod_args['arenaComparePerGame'] = 5
+                mod_args['arenaComparePerGame'] = 20
 
                 log.info('Evaluating against baselines...')
 
