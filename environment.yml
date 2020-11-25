@@ -7,4 +7,6 @@ dependencies:
   - coloredlogs
   - pytorch
   - torchvision
+  - torchsummary
+  - dgl
   # - pip:
