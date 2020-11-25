@@ -1,15 +1,16 @@
 # meta-minichess
 
+An environment to run meta-learning experiments on minichess games with varying rulesets. Class project for MIT's [6.883: Meta Learning](http://www.mit.edu/~idrori/metalearningmitfall2020.html).
+
+See also: [minichess](https://github.com/mdhiebert/minichess) and [gym-minichess](https://github.com/mdhiebert/gym-minichess).
+
 ## Contents
 
 - [Contents](#contents)
 - [Quickstart](#quickstart)
-- [Setup](#setup)
-	- [Automatic](#automatic)
-	- [Manual](#manual)
-	- [GCloud](#gcloud)
-- [To-Do](#to-do)
-- [Changelog](#changelog)
+- [Scripts](#scripts)
+	- [Train](#train)
+- [GCloud](#gcloud)
 - [Objective](#objective)
 - [Methodology](#methodology)
 	- [Action Space](#action-space)
@@ -17,6 +18,7 @@
 	- [MCTS](#mcts)
 - [Result Log](#result-log)
     - [Naïve Opening](#naïve-opening)
+- [Changelog](#changelog)
 - [References](#references)
 
 ## Quickstart
@@ -41,73 +43,11 @@ Launch experiment to train a jack-of-all-trades minichess model with distributed
 python -m scripts.train --workers=8 --games gardner mallet baby rifle dark atomic --eval_on_baselines --arenapergame=0
 ```
 
-To use more workers, simply bump up the `--workers=` value.
-
-
+To use more workers, simply bump up the `--workers` value.
 
 See progress in terminal and updated loss plots in `./policy_loss.png` and `./value_loss.png`.
 
-## Setup
-
-Clone the repository:
-
-```bash
-git clone https://github.com/mdhiebert/meta-minichess.git
-cd meta-minichess
-```
-
-### Automatic
-
-Just run the following script to handle setup:
-
-*[TODO]* DOES NOT WORK FOR MACOS
-
-```bash
-python scripts/refresh.py --development_dir=<PATH_TO_DEVELOPMENT_DIRECTORY>
-```
-### Manual
-
-It is recommended to create a conda environment when running meta-minichess games:
-
-```bash
-conda create -n mmc python=3.7.4 anaconda
-conda activate mmc
-```
-
-This repository leverages three separate custom packages: [minichess](https://github.com/mdhiebert/minichess.git), [gym-minichess](https://github.com/mdhiebert/gym-minichess.git), and [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch.git). To install them for use in `meta-minichess`, execute the following lines in the terminal:
-
-
-First, we install the underlying minichess libraries: 
-
-```bash
-git clone https://github.com/mdhiebert/minichess.git
-cd minichess
-pip install -e .
-cd ..
-git clone https://github.com/mdhiebert/gym-minichess
-cd gym-minichess
-pip install -e .
-cd ..
-```
-
-Then, we install our MuZero libary:
-
-```bash
-git clone https://github.com/mdhiebert/muzero-pytorch
-cd muzero-pytorch
-pip install -r requirements.txt
-pip install torch
-pip install tensorboard
-pip install -e .
-cd ..
-```
-
-We can train a model on the standard Gardner ruleset with:
-```bash
-python main.py --env minichess-gardner-v0 --case minichess --opr train --force
-```
-
-### GCloud
+## GCloud
 
 Spin up a VM instance via Google Cloud Compute Engine
 
@@ -142,66 +82,61 @@ source .bashrc
 ```
 
 Now, it's ready to follow Quickstart Guide above!
+## Scripts
 
+### Train
 
-## To-Do
+For more details on training, refer to the help:
 
-_crossed-out = DONE_
+```bash
+$ python -m scripts.train --help
+usage: train.py [-h] [--iterations ITERATIONS] [--episodes EPISODES]
+                [--mcts_sims MCTS_SIMS] [--arenapergame ARENAPERGAME]
+                [--max_moves MAX_MOVES] [--win_threshold WIN_THRESHOLD]
+                [--workers WORKERS]
+                [--games {gardner,mallet,baby,rifle,dark,atomic} [{gardner,mallet,baby,rifle,dark,atomic} ...]]
+                [--probs PROBS [PROBS ...]] [--eval_on_baselines] [--debug]
 
-- ~~Create a MiniChess library that can handle board state and rules.~~
-	- ~~Create from scratch.~~
-	- Leverage [existing chess library](https://github.com/niklasf/python-chess).
-- ~~Create an Open-AI Gym environment for Gardner MiniChess~~
-	- ~~[gym-chess](https://github.com/iamlucaswolf/gym-chess) for reference.~~
-	- ~~As well as the [docs](https://github.com/openai/gym/blob/master/docs/creating-environments.md) from [the OpenAI gym repo](https://github.com/openai/gym).~~
-- Interface environment with [MuZero](https://github.com/koulanurag/muzero-pytorch) implementation
-	- [This](https://github.com/werner-duvaud/muzero-general) is a better documented alternative but is Windows-incompatible.
-- Create variant rules as sub-environments in our gym.
-	- ~~[Atomic Chess](https://en.wikipedia.org/wiki/Atomic_chess)~~
-		- ~~Does not change action space.~~
-	- ~~[Dark Chess](https://en.wikipedia.org/wiki/Dark_chess)~~
-		- ~~Changes how observations are generated.~~
-	- [Extinction Chess](https://en.wikipedia.org/wiki/Extinction_chess)
-		- Changes reward function.
-	- ~~[Monochromatic Chess](https://en.wikipedia.org/wiki/Monochromatic_chess)~~
-		- Changes legality of moves.
-	- [Portal Chess](https://en.wikipedia.org/wiki/Portal_chess)
-		- Changes action space.
-	- [Progressive Chess](https://en.wikipedia.org/wiki/Progressive_chess)
-		- Changes game structure.
-	- ~~[Rifle Chess](https://www.chessvariants.com/difftaking.dir/rifle.html)~~
-		- ~~Changes action space.~~
-- Meta-learn hyperparameters across variable rulesets.
-- Update `refresh.py` or other setup scripts to work on other OSs
+Train a multitasking minichess model.
 
-## Changelog
-*[11/24]* Added `scripts/train.py` to facilitate training. Added ability to bypass Arena play and evaluate against random/greedy benchmarks. Modified all games to produce greedy/random players for evaluation.
+optional arguments:
+  -h, --help            show this help message and exit
+  --iterations ITERATIONS
+                        Number of full AlphaZero iterations to run for
+                        training (default: 500)
+  --episodes EPISODES   Number of episodes of self-play per iteration
+                        (default: 100)
+  --mcts_sims MCTS_SIMS
+                        Number of MCTS simulations to perform per action.
+  --arenapergame ARENAPERGAME
+                        The number of Arena Games to conduct per game variant
+                        per iteration. This number will be divided in half to
+                        give the model equal reps as both black and white. If
+                        this is 0, Arena will be skipped. (default: 10)
+  --max_moves MAX_MOVES
+                        The maximum number of moves permitted in a minichess
+                        game before declaring a draw (default: 75)
+  --win_threshold WIN_THRESHOLD
+                        The win threshold above which a new model must reach
+                        during arena-play to become the new best model
+                        (default: 0.6)
+  --workers WORKERS     The number of workers to use to process self- and
+                        arena-play. A value >1 will leverage multiprocessing.
+                        (default: 1)
+  --games {gardner,mallet,baby,rifle,dark,atomic} [{gardner,mallet,baby,rifle,dark,atomic} ...]
+                        The games to consider during training. (default: just
+                        gardner)
+  --probs PROBS [PROBS ...]
+                        The probabilities of the games to consider during
+                        training. The ith probability corresponds to the ith
+                        game provided. If no value is provided, this defaults
+                        to a uniform distribution across the provided games.
+                        (default: uniform dist)
+  --eval_on_baselines   If passed in, we will evaluate our model against
+                        random and greedy players and plot the win rates.
+  --debug
 
-*[11/23]* Implemented distributed self-play and arena-play.
-
-*[11/22]* JOAT Infrastructure and Dark/Monochromatic/Bichromatic implementations done.
-
-*[11/18]* Implemented Atomic Chess rule variant.
-
-*[11/15]* Updated `scripts/mcts_sim.py` to support command line arguments to set game.
-
-*[11/14]* Wrote `scripts/mcts_sim.py` to facilitate MCTS simulations.
-
-*[11/12]* Wrote `scripts/refresh.py` to facilitate setup and make development a little easier.
-
-*[11/10]* Implemented Dark Chess rule variant.
-
-*[11/09]* Implemented Rifle Chess rule variant.
-
-*[11/07]* Refactor complete. gym-minichess initial implementation is also complete. Able to run a forked version of [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch) for out-of-the-box environment. Working on connecting existing environments with MuZero codebase. Seems to have an error running on Windows - will confirm.
-
-Error confirmed for Windows, even with running out-of-box experiments.
-
-*[11/04]* Beginning the refactor. Pushed initital code for [gym-minichess](https://github.com/mdhiebert/gym-minichess). Will do this "bottom-up", starting with MiniChess implementation and build up.
-
-*[11/03]* Decided to create an OpenAI Gym environment to facilitate our RL. Will hopefully be easy to hook it up to a MuZero implementation. We can create several sub-environments within our Gym to handle the variations across rules. Will require a refactor.
-
-*[10/30]* Model able to train, improve, and then achieve ideal end-states (victory vs naive opponents, draw vs. itself) using MCTS and conventional neural network.
+```
 
 ## Pseudocode
 
@@ -408,6 +343,35 @@ if s not in P_s:
 [♙][♙][ ][♙][ ]
 [♖][♘][♗][♕][♔]
 ```
+
+## Changelog
+*[11/24]* Added `scripts/train.py` to facilitate training. Added ability to bypass Arena play and evaluate against random/greedy benchmarks. Modified all games to produce greedy/random players for evaluation.
+
+*[11/23]* Implemented distributed self-play and arena-play.
+
+*[11/22]* JOAT Infrastructure and Dark/Monochromatic/Bichromatic implementations done.
+
+*[11/18]* Implemented Atomic Chess rule variant.
+
+*[11/15]* Updated `scripts/mcts_sim.py` to support command line arguments to set game.
+
+*[11/14]* Wrote `scripts/mcts_sim.py` to facilitate MCTS simulations.
+
+*[11/12]* Wrote `scripts/refresh.py` to facilitate setup and make development a little easier.
+
+*[11/10]* Implemented Dark Chess rule variant.
+
+*[11/09]* Implemented Rifle Chess rule variant.
+
+*[11/07]* Refactor complete. gym-minichess initial implementation is also complete. Able to run a forked version of [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch) for out-of-the-box environment. Working on connecting existing environments with MuZero codebase. Seems to have an error running on Windows - will confirm.
+
+Error confirmed for Windows, even with running out-of-box experiments.
+
+*[11/04]* Beginning the refactor. Pushed initital code for [gym-minichess](https://github.com/mdhiebert/gym-minichess). Will do this "bottom-up", starting with MiniChess implementation and build up.
+
+*[11/03]* Decided to create an OpenAI Gym environment to facilitate our RL. Will hopefully be easy to hook it up to a MuZero implementation. We can create several sub-environments within our Gym to handle the variations across rules. Will require a refactor.
+
+*[10/30]* Model able to train, improve, and then achieve ideal end-states (victory vs naive opponents, draw vs. itself) using MCTS and conventional neural network.
 
 ## References
 
