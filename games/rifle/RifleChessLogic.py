@@ -17,15 +17,14 @@ class RifleBoard(Board):
         if abs(flat_pieces[j]) == Board.KING:
             self.player_won = player
 
-        is_capture = q != 0
+        is_capture = (q != 0)
 
         # in rifle chess, we do not move on captures
         if is_capture:
             board = put(board, j, Board.BLANK)
-            j = i # this is to prevent illegal promotions
         else:
-            board = put(board, i, Board.BLANK)
             board = put(board, j, board[i])
+            board = put(board, i, Board.BLANK)
 
         # Castling rights, we move the rook or capture the opponent's
         if i == self.bottom_left: wc = (False, wc[1])

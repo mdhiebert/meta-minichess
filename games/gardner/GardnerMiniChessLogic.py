@@ -227,6 +227,7 @@ class Board:
 
     def display(self,player):
         print()
+        SPACE = ' '
         uni_pieces = {
             -Board.ROOK: '♜',
             -Board.KNIGHT: '♞',
@@ -240,16 +241,22 @@ class Board:
             Board.QUEEN: '♕',
             Board.KING: '♔',
             Board.PAWN: '♙',
-            Board.BLANK: '· '
+            Board.BLANK: '⊙'
         }
         result = self.pieces_without_padding()
         if player < 0: result = result[::-1]
         color_output = False
+        s = ''
+
+        for row in result:
+            s += SPACE.join([uni_pieces[tile] for tile in row])
+            s += '\n'
+        return s
         # print(' ', self.n - i, ' '.join(uni_pieces.get(p, p) for p in row))
         for i, row in enumerate(result):
             out = ''
             if not color_output:
-                out = ' '.join(uni_pieces.get(p*player) for p in row) + '                            '
+                out = SPACE.join(uni_pieces.get(p*player) for p in row) + '                            '
             else:
                 out = []
                 for p in row:
