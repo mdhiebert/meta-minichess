@@ -8,14 +8,9 @@ See also: [minichess](https://github.com/mdhiebert/minichess) and [gym-minichess
 
 - [Contents](#contents)
 - [Quickstart](#quickstart)
-<<<<<<< HEAD
-=======
-- [Setup](#setup)
-	- [GCloud](#gcloud)
->>>>>>> 41e5250b8409fa93eecac63b6c7013d20da9c213
-- [To-Do](#to-do)
 - [Scripts](#scripts)
 	- [Train](#train)
+- [GCloud](#gcloud)
 - [Objective](#objective)
 - [Methodology](#methodology)
 	- [Action Space](#action-space)
@@ -48,12 +43,45 @@ Launch experiment to train a jack-of-all-trades minichess model with distributed
 python -m scripts.train --workers=8 --games gardner mallet baby rifle dark atomic --eval_on_baselines --arenapergame=0
 ```
 
-To use more workers, simply bump up the `--workers` value. If 
-
-
+To use more workers, simply bump up the `--workers` value.
 
 See progress in terminal and updated loss plots in `./policy_loss.png` and `./value_loss.png`.
 
+## GCloud
+
+Spin up a VM instance via Google Cloud Compute Engine
+
+- May run into specifications and limits based upon numbers of vCPUs wanted and region/zone of hosting
+
+Download [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstart) Locally
+
+[Upload files to VM via SCP](https://cloud.google.com/compute/docs/instances/transfer-files#transfergcloud)
+
+```bash
+gcloud compute scp --recurse meta-minichess/ instance-name:~
+```
+
+[Download and Install Anaconda](https://medium.com/google-cloud/set-up-anaconda-under-google-cloud-vm-on-windows-f71fc1064bd7)
+
+First, SSH into the VM
+
+```bash
+gcloud compute ssh instance-name
+```
+
+Once in, install basic tools, download the latest Anaconda distribution, execute the shell script, and then reset the bash commands.
+
+```instance bash
+sudo apt-get update
+sudo apt-get install bzip2 libxml2-dev
+sudo apt-get install wget
+wget https://repo.anaconda.com/archive/Anaconda3-2020.11-Linux-x86_64.sh
+bash Anaconda3-2020.11-Linux-x86_64.sh
+rm Anaconda3-2020.11-Linux-x86_64.sh
+source .bashrc
+```
+
+Now, it's ready to follow Quickstart Guide above!
 ## Scripts
 
 ### Train
@@ -110,80 +138,6 @@ optional arguments:
 
 ```
 
-<<<<<<< HEAD
-=======
-We can train a model on the standard Gardner ruleset with:
-```bash
-python main.py --env minichess-gardner-v0 --case minichess --opr train --force
-```
-
-### GCloud
-
-Spin up a VM instance via Google Cloud Compute Engine
-
-- May run into specifications and limits based upon numbers of vCPUs wanted and region/zone of hosting
-
-Download [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstart) Locally
-
-[Upload files to VM via SCP](https://cloud.google.com/compute/docs/instances/transfer-files#transfergcloud)
-
-```bash
-gcloud compute scp --recurse meta-minichess/ instance-name:~
-```
-
-[Download and Install Anaconda](https://medium.com/google-cloud/set-up-anaconda-under-google-cloud-vm-on-windows-f71fc1064bd7)
-
-First, SSH into the VM
-
-```bash
-gcloud compute ssh instance-name
-```
-
-Once in, install basic tools, download the latest Anaconda distribution, execute the shell script, and then reset the bash commands.
-
-```instance bash
-sudo apt-get update
-sudo apt-get install bzip2 libxml2-dev
-sudo apt-get install wget
-wget https://repo.anaconda.com/archive/Anaconda3-2020.11-Linux-x86_64.sh
-bash Anaconda3-2020.11-Linux-x86_64.sh
-rm Anaconda3-2020.11-Linux-x86_64.sh
-source .bashrc
-```
-
-Now, it's ready to follow Quickstart Guide above!
-
-
-## Changelog
-*[11/24]* Added `scripts/train.py` to facilitate training. Added ability to bypass Arena play and evaluate against random/greedy benchmarks. Modified all games to produce greedy/random players for evaluation.
-
-*[11/23]* Implemented distributed self-play and arena-play.
-
-*[11/22]* JOAT Infrastructure and Dark/Monochromatic/Bichromatic implementations done.
-
-*[11/18]* Implemented Atomic Chess rule variant.
-
-*[11/15]* Updated `scripts/mcts_sim.py` to support command line arguments to set game.
-
-*[11/14]* Wrote `scripts/mcts_sim.py` to facilitate MCTS simulations.
-
-*[11/12]* Wrote `scripts/refresh.py` to facilitate setup and make development a little easier.
-
-*[11/10]* Implemented Dark Chess rule variant.
-
-*[11/09]* Implemented Rifle Chess rule variant.
-
-*[11/07]* Refactor complete. gym-minichess initial implementation is also complete. Able to run a forked version of [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch) for out-of-the-box environment. Working on connecting existing environments with MuZero codebase. Seems to have an error running on Windows - will confirm.
-
-Error confirmed for Windows, even with running out-of-box experiments.
-
-*[11/04]* Beginning the refactor. Pushed initital code for [gym-minichess](https://github.com/mdhiebert/gym-minichess). Will do this "bottom-up", starting with MiniChess implementation and build up.
-
-*[11/03]* Decided to create an OpenAI Gym environment to facilitate our RL. Will hopefully be easy to hook it up to a MuZero implementation. We can create several sub-environments within our Gym to handle the variations across rules. Will require a refactor.
-
-*[10/30]* Model able to train, improve, and then achieve ideal end-states (victory vs naive opponents, draw vs. itself) using MCTS and conventional neural network.
-
->>>>>>> 41e5250b8409fa93eecac63b6c7013d20da9c213
 ## Pseudocode
 
 Michael
