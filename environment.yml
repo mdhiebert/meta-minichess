@@ -8,4 +8,5 @@ dependencies:
   - pytorch
   - torchvision
   - torchsummary
+  - dgl
   # - pip:
