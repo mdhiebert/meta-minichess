@@ -21,11 +21,15 @@ See also: [minichess](https://github.com/mdhiebert/minichess) and [gym-minichess
 			- [Legality](#legality)
 	- [Learning](#learning)
 		- [Single-Variant Training Architecture](#single-variant-training-architecture)
+		- [Multi-Variant Training Architecture](#multi-variant-training-architecture)
+		- [MetaFocus Training Architecture](#metafocus-training-architecture)
 	- [MCTS](#mcts)
 - [Result Log](#result-log)
     - [Naïve Opening](#naïve-opening)
 - [Changelog](#changelog)
 - [References](#references)
+- [Appendix](#appendix)
+	- [MCTS Pseudocode](#mcts-pseudocode)
 
 ## Quickstart
 
@@ -292,7 +296,7 @@ TODO
 
 ![assets/mvta_arch.png](assets/mvta_arch.png)
 
-Our meta-training architecture for multiple variants is very similar to [MAML for RL](https://arxiv.org/pdf/1703.03400.pdf), and was inspired by a project done for [MIT's 6.882](https://phillipi.github.io/6.882/2019/) in Spring of 2019: [INSECT](https://echen9898.github.io/assets/2019-05-18/882_Report.pdf). The double gradient loop of MAML requires many self-play iterations, which prove to be the most costly portion of the training loop. By removing the second gradient loop and instead take an average over the policies found in the inner loop, we cut down on a significant amount of training time. In exposing our model to our distribution of tasks by sampling a rule-variant and running it through our SVTA, we aim to produce a Jack-of-All-Trades (JOAT) model that can quickly adapt to different variants.
+Our meta-training architecture for multiple variants is very similar to [MAML for RL](https://arxiv.org/pdf/1703.03400.pdf), and was inspired by a project done for [MIT's 6.882](https://phillipi.github.io/6.882/2019/) in Spring of 2019: [INSECT](https://echen9898.github.io/assets/2019-05-18/882_Report.pdf). The double gradient loop of MAML requires many self-play iterations, which prove to be the most costly portion of the training loop. By removing the second gradient loop and instead taking an average over the policies found in the inner loop, we cut down on a significant amount of training time. In exposing our model to our distribution of tasks by sampling a rule-variant and running it through our SVTA, we aim to produce a Jack-of-All-Trades (JOAT) model that can quickly adapt to different variants.
 
 In pseudocode:
 
@@ -319,11 +323,17 @@ while not done:
 return policy
 ```
 
-#### Meta Multi-Variant Training Architecture
+This implementation can be found at `JOATCoach.metatrain()` in `learning/alpha_zero/distributed/joat_coach.py`
+
+The results of our metatraining can be seen in [results](#results).
+
+In addition, we also tried to tackle this problem from a different angle, using [controlled dropout](https://github.com/kobiso/Controlled-Dropout) to improve performance across varying rulesets:
+
+#### MetaFocus Training Architecture
 
 ![assets/mmvta_arch.png](assets/mmvta_arch.png)
 
-
+TODO
 
 ## Result Log
 
@@ -370,6 +380,8 @@ WHITE WIN
 
 ## Changelog
 *[11/25]* Bug fixes and more training. Created diagrams and added significant information to the README.
+
+Implemented new JOAT training loop based on MAML/INSECT.
 
 *[11/24]* Added `scripts/train.py` to facilitate training. Added ability to bypass Arena play and evaluate against random/greedy benchmarks. Modified all games to produce greedy/random players for evaluation.
 
