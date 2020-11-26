@@ -282,11 +282,19 @@ As such, we relied on the `alpha-zero-general` implementation of AlphaZero menti
 
 We thus had the following training architecture for learning on single variants:
 
-![assets/svta_arch.png](assets/svta_arch.png)
-
 #### Single-Variant Training Architecture
 
+![assets/svta_arch.png](assets/svta_arch.png)
+
 TODO
+
+#### Multi-Variant Training Architecture
+
+![assets/mvta_arch.png](assets/mvta_arch.png)
+
+#### Meta Multi-Variant Training Architecture
+
+![assets/mmvta_arch.png](assets/mmvta_arch.png)
 
 
 
