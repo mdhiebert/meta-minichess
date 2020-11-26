@@ -251,7 +251,7 @@ class JOATCoach():
         plt.xlabel('Epochs (~10^2 Games)')
         plt.ylabel('Policy Loss')
         plt.legend()
-        plt.savefig('policy_loss.png')
+        plt.savefig('results/policy_loss.png')
 
         plt.cla()
         plt.clf()
@@ -264,7 +264,7 @@ class JOATCoach():
         plt.xlabel('Epochs (~10^2 Games)')
         plt.ylabel('Value Loss')
         plt.legend()
-        plt.savefig('value_loss.png')
+        plt.savefig('results/value_loss.png')
 
     def plot_win_rate(self, win_rates, opponent):
 
@@ -277,4 +277,4 @@ class JOATCoach():
         plt.xlabel('Iteration (~10^2 Games)')
         plt.ylabel('Win Rate')
         plt.legend()
-        plt.savefig(f'win_rates_{opponent}.png')
+        plt.savefig(f'results/win_rates_{opponent}.png')

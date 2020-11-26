@@ -8,13 +8,19 @@ See also: [minichess](https://github.com/mdhiebert/minichess) and [gym-minichess
 
 - [Contents](#contents)
 - [Quickstart](#quickstart)
+	- [GCloud](#gcloud)
 - [Scripts](#scripts)
 	- [Train](#train)
-- [GCloud](#gcloud)
 - [Objective](#objective)
 - [Methodology](#methodology)
-	- [Action Space](#action-space)
-		- [Legality](#legality)
+	- [Environment](#environment)
+		- [Variants](#variants)
+		- [minichess](#minichess)
+		- [gym-minichess](#gym-minichess)
+		- [Action Space](#action-space)
+			- [Legality](#legality)
+	- [Learning](#learning)
+		- [Single-Variant Training Architecture](#single-variant-training-architecture)
 	- [MCTS](#mcts)
 - [Result Log](#result-log)
     - [Naïve Opening](#naïve-opening)
@@ -45,9 +51,9 @@ python -m scripts.train --workers=8 --games gardner mallet baby rifle dark atomi
 
 To use more workers, simply bump up the `--workers` value.
 
-See progress in terminal and updated loss plots in `./policy_loss.png` and `./value_loss.png`.
+See progress in terminal and updated loss plots in `./results/policy_loss.png` and `./results/value_loss.png`.
 
-## GCloud
+### GCloud
 
 Spin up a VM instance via Google Cloud Compute Engine
 
@@ -216,11 +222,44 @@ JOAT1 and JOAT2 vs random, greedy, etc. show superiority
 
 ## Objective
 
-TODO
+In practical application, one of the most compelling aspects of human intelligence is its adaptability. With strategy games, like chess (or its smaller variant, minichess), the value of this aspect shines most brightly in situations where rules are not static from game to game. In chess, these dynamic conditions manifest themselves as [variants of standard play](https://en.wikipedia.org/wiki/List_of_chess_variants). In real life, they may manifest themselves as changing weather or terrain conditions, or other unforeseen and sudden human/machine limitations.
+
+State of the art reinforcement learning models are able to achieve superhuman performance under static conditions. [AlphaZero](https://arxiv.org/pdf/1712.01815.pdf), and its successor, [MuZero](https://arxiv.org/pdf/1911.08265.pdf), have attained practically-perfect levels of skill in games like Chess, Shogi, and Go. This performance quickly deteriorates when the rules they were trained under are altered. An AlphaZero model exhibiting perfect play in [Gardner minichess](https://en.wikipedia.org/wiki/Minichess#5%C3%975_chess), say, loses TODO% of its games against a random player in variants of the game like [Atomic chess](https://en.wikipedia.org/wiki/Atomic_chess).
+
+To this end, we seek to create a meta-learning framework around a modified [implementation of AlphaZero](https://github.com/suragnair/alpha-zero-general) in order to train a meta-model which can identify changing conditions and provide a learning model which can quickly (≤1 AlphaZero iteration) adapt to and excel under them.
 
 ## Methodology
 
-### Action Space
+### Environment
+
+Much of the initial effort was spent creating an environment to facilitate our minichess meta/reinforcement learning experiments. There were no pre-existing libraries that supported the rule variants of minichess, so we created our own.
+
+#### Variants
+
+We set out to implement several different variants of standard [Gardner minichess](https://en.wikipedia.org/wiki/Minichess#5%C3%975_chess):
+
+- [Baby Chess](https://en.wikipedia.org/wiki/Minichess#5%C3%975_chess) - a variant with the same rules, but a different starting configuration.
+- [Mallet Chess](https://en.wikipedia.org/wiki/Minichess#5%C3%975_chess) - another variant with the same rules, but a different starting configuration.
+- [Rifle Chess](https://www.chessvariants.com/difftaking.dir/rifle.html) - standard starting configuration, but captures happen "at range", where the capturing piece does not occupy the tile of the captured piece
+- [Atomic Chess](https://en.wikipedia.org/wiki/Atomic_chess) - standard starting configuration, but captures also remove the capturing piece and all non-pawn pieces surrounding the captured piece
+- [Monochromatic Chess](https://en.wikipedia.org/wiki/Monochromatic_chess) - standard starting configuration, but pieces can only move to tiles that share the color of the tile they started on
+- [Bichromatic Chess](https://en.wikipedia.org/wiki/Monochromatic_chess#Bichromatic_chess) - standard starting configuration, but pieces can only move to tiles that have the opposite color of their current tile
+- [Dark Chess](https://en.wikipedia.org/wiki/Dark_chess) - standard starting configuration, but a player can only see their own pieces and tiles that their pieces can move to, the rest remain "dark"
+- [Extinction Chess](https://en.wikipedia.org/wiki/Extinction_chess) - standard starting configuration but the victory conditions are changed, the first player to remove all of any one kind of piece from their opponent (e.g. capturing the king, or both rooks, all pawns) wins.
+
+#### minichess
+
+The first repository, [minichess](https://github.com/mdhiebert/minichess), was created to handle the game logic of our base ruleset, Gardner's Minichess, and several others. We implemented Gardner, Baby, Mallet, Dark, Rifle, Atomic, Monochromatic, and Bichromatic.
+
+Wrappers for these are implemented in `./games`. The wrapper for gardner, baby, and mallet were borrowed (with slight modification) from [Karthik Selva's fork of alpha-zero-general](https://github.com/karthikselva/alpha-zero-general).
+
+#### gym-minichess
+
+We also created an OpenAI gym environment for minichess, found at [gym-minichess](https://github.com/mdhiebert/gym-minichess).
+
+Work on this was halted as we pivoted towards experiments not relying on the gym substructure.
+
+#### Action Space
 
 For our RL model, we have chosen to represent our action space as a (1225,) vector. This is because we have:
 
@@ -231,11 +270,119 @@ For our RL model, we have chosen to represent our action space as a (1225,) vect
 
 This gives us 5x5x(8x4 + 8 + 3x3) = 1225 possible actions to choose from.
 
-#### Legality
+##### Legality
 
 Of course. Not all moves are valid at every step. To account for this, we simply apply a mask over illegal moves to our networks output and re-normalize.
 
-### MCTS
+### Learning
+
+The first step was to train an expert-level Gardner minichess model to serve as the base of future adaptable models. The intuition was that since it had mastered the standard ruleset, its understanding of the innate mechanisms of minichess would enable it to learn other rulesets more quickly than from scratch.
+
+As such, we relied on the `alpha-zero-general` implementation of AlphaZero mentioned above to serve as our inner loop for AlphaZero iterations. *However*, at the time of this project, the repository did not support distributed computation, resulting in extremely slow training. To remedy this, we modified the pipeline to allow for multiprocessing. This modified system can be found in `learning/alpha_zero/distributed`.
+
+We thus had the following training architecture for learning on single variants:
+
+![assets/svta_arch.png](assets/svta_arch.png)
+
+#### Single-Variant Training Architecture
+
+TODO
+
+
+
+## Result Log
+
+### Model vs Random (Atomic)
+```
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♟ ♟ ♟
+⊙ ⊙ ⊙ ⊙ ⊙
+♙ ♙ ♙ ♙ ♙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♟ ♟ ♟
+⊙ ⊙ ⊙ ⊙ ♙
+♙ ♙ ♙ ♙ ⊙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ⊙ ♟ ♟
+⊙ ⊙ ♟ ⊙ ♙
+♙ ♙ ♙ ♙ ⊙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ⊙ ♟ ♟
+⊙ ⊙ ♟ ⊙ ♙
+♙ ♙ ♙ ♙ ♕
+♖ ♘ ♗ ⊙ ♔
+
+♜ ♞ ♝ ⊙ ♚
+♟ ♟ ⊙ ♟ ♟
+⊙ ⊙ ♟ ⊙ ♙
+⊙ ♙ ♙ ♙ ♕
+⊙ ⊙ ♗ ⊙ ♔
+
+♜ ♞ ⊙ ⊙ ⊙
+♟ ♟ ⊙ ⊙ ♟
+⊙ ⊙ ♟ ⊙ ⊙
+⊙ ♙ ♙ ♙ ♕
+⊙ ⊙ ♗ ⊙ ♔
+
+WHITE WIN
+```
+
+## Changelog
+*[11/25]* Bug fixes and more training. Created diagrams and added significant information to the README.
+
+*[11/24]* Added `scripts/train.py` to facilitate training. Added ability to bypass Arena play and evaluate against random/greedy benchmarks. Modified all games to produce greedy/random players for evaluation.
+
+*[11/23]* Implemented distributed self-play and arena-play.
+
+*[11/22]* JOAT Infrastructure and Dark/Monochromatic/Bichromatic implementations done.
+
+*[11/18]* Implemented Atomic Chess rule variant.
+
+*[11/15]* Updated `scripts/mcts_sim.py` to support command line arguments to set game.
+
+*[11/14]* Wrote `scripts/mcts_sim.py` to facilitate MCTS simulations.
+
+*[11/12]* Wrote `scripts/refresh.py` to facilitate setup and make development a little easier.
+
+*[11/10]* Implemented Dark Chess rule variant.
+
+*[11/09]* Implemented Rifle Chess rule variant.
+
+*[11/07]* Refactor complete. gym-minichess initial implementation is also complete. Able to run a forked version of [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch) for out-of-the-box environment. Working on connecting existing environments with MuZero codebase. Seems to have an error running on Windows - will confirm.
+
+Error confirmed for Windows, even with running out-of-box experiments.
+
+*[11/04]* Beginning the refactor. Pushed initital code for [gym-minichess](https://github.com/mdhiebert/gym-minichess). Will do this "bottom-up", starting with MiniChess implementation and build up.
+
+*[11/03]* Decided to create an OpenAI Gym environment to facilitate our RL. Will hopefully be easy to hook it up to a MuZero implementation. We can create several sub-environments within our Gym to handle the variations across rules. Will require a refactor.
+
+*[10/30]* Model able to train, improve, and then achieve ideal end-states (victory vs naive opponents, draw vs. itself) using MCTS and conventional neural network.
+
+## References
+
+- Learning to Play Minichess Without Human Knowledge - K. Bhuvaneswaran ([paper](https://cs230.stanford.edu/projects_spring_2018/reports/8290438.pdf)) ([code](https://github.com/karthikselva/alpha-zero-general))
+    - Very useful reference for training Minichess models, also has some pretrained Keras models.
+- Learning to Cope with Adversarial Attacks - X. Lee, A. Heavens et al. ([paper](https://arxiv.org/pdf/1906.12061.pdf))
+    - Adversarial RL Grid World algorithm
+- Continuous Adaptation via Meta-Learning in Nonstationary and Competitive Environments - M. Al Shedivat, T. Bansal, et al. ([paper](https://arxiv.org/pdf/1710.03641.pdf)) ([code](https://github.com/openai/robosumo))
+	- 'Spider' paper
+	- Similar meta-model & outer-loop structure
+- Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks - C. Finn, P. Abbeel & S. Levine ([paper](https://arxiv.org/pdf/1703.03400.pdf)) ([code](https://github.com/cbfinn/maml))
+	- Meta-Learning Architecture
+	- Created MAML for Few-Shot Supervised Learning as basline
+- Meta-World: A Benchmark and Evaluation for Multi-Task and Meta Reinforcement Learning - T. Yu, D. Quillen et al. ([paper](https://arxiv.org/pdf/1910.10897v1.pdf))
+	- Defined 'Meta-World' as task distribution
+	- Utilize as model to define task/rules distribution of different chess piece rule sets
+
+## Appendix
+
+### MCTS Pseudocode
 
 Pseudocode base off of [alpha-zero-general](https://github.com/suragnair/alpha-zero-general/blob/master/MCTS.py) implementation.
 ```
@@ -314,91 +461,3 @@ if s not in P_s:
 	return -v
 
 ```
-
-## Result Log
-
-### Model vs Random (Atomic)
-```
-♜ ♞ ♝ ♛ ♚
-♟ ♟ ♟ ♟ ♟
-⊙ ⊙ ⊙ ⊙ ⊙
-♙ ♙ ♙ ♙ ♙
-♖ ♘ ♗ ♕ ♔
-
-♜ ♞ ♝ ♛ ♚
-♟ ♟ ♟ ♟ ♟
-⊙ ⊙ ⊙ ⊙ ♙
-♙ ♙ ♙ ♙ ⊙
-♖ ♘ ♗ ♕ ♔
-
-♜ ♞ ♝ ♛ ♚
-♟ ♟ ⊙ ♟ ♟
-⊙ ⊙ ♟ ⊙ ♙
-♙ ♙ ♙ ♙ ⊙
-♖ ♘ ♗ ♕ ♔
-
-♜ ♞ ♝ ♛ ♚
-♟ ♟ ⊙ ♟ ♟
-⊙ ⊙ ♟ ⊙ ♙
-♙ ♙ ♙ ♙ ♕
-♖ ♘ ♗ ⊙ ♔
-
-♜ ♞ ♝ ⊙ ♚
-♟ ♟ ⊙ ♟ ♟
-⊙ ⊙ ♟ ⊙ ♙
-⊙ ♙ ♙ ♙ ♕
-⊙ ⊙ ♗ ⊙ ♔
-
-♜ ♞ ⊙ ⊙ ⊙
-♟ ♟ ⊙ ⊙ ♟
-⊙ ⊙ ♟ ⊙ ⊙
-⊙ ♙ ♙ ♙ ♕
-⊙ ⊙ ♗ ⊙ ♔
-
-WHITE WIN
-```
-
-## Changelog
-*[11/24]* Added `scripts/train.py` to facilitate training. Added ability to bypass Arena play and evaluate against random/greedy benchmarks. Modified all games to produce greedy/random players for evaluation.
-
-*[11/23]* Implemented distributed self-play and arena-play.
-
-*[11/22]* JOAT Infrastructure and Dark/Monochromatic/Bichromatic implementations done.
-
-*[11/18]* Implemented Atomic Chess rule variant.
-
-*[11/15]* Updated `scripts/mcts_sim.py` to support command line arguments to set game.
-
-*[11/14]* Wrote `scripts/mcts_sim.py` to facilitate MCTS simulations.
-
-*[11/12]* Wrote `scripts/refresh.py` to facilitate setup and make development a little easier.
-
-*[11/10]* Implemented Dark Chess rule variant.
-
-*[11/09]* Implemented Rifle Chess rule variant.
-
-*[11/07]* Refactor complete. gym-minichess initial implementation is also complete. Able to run a forked version of [muzero-pytorch](https://github.com/mdhiebert/muzero-pytorch) for out-of-the-box environment. Working on connecting existing environments with MuZero codebase. Seems to have an error running on Windows - will confirm.
-
-Error confirmed for Windows, even with running out-of-box experiments.
-
-*[11/04]* Beginning the refactor. Pushed initital code for [gym-minichess](https://github.com/mdhiebert/gym-minichess). Will do this "bottom-up", starting with MiniChess implementation and build up.
-
-*[11/03]* Decided to create an OpenAI Gym environment to facilitate our RL. Will hopefully be easy to hook it up to a MuZero implementation. We can create several sub-environments within our Gym to handle the variations across rules. Will require a refactor.
-
-*[10/30]* Model able to train, improve, and then achieve ideal end-states (victory vs naive opponents, draw vs. itself) using MCTS and conventional neural network.
-
-## References
-
-- Learning to Play Minichess Without Human Knowledge - K. Bhuvaneswaran ([paper](https://cs230.stanford.edu/projects_spring_2018/reports/8290438.pdf)) ([code](https://github.com/karthikselva/alpha-zero-general))
-    - Very useful reference for training Minichess models, also has some pretrained Keras models.
-- Learning to Cope with Adversarial Attacks - X. Lee, A. Heavens et al. ([paper](https://arxiv.org/pdf/1906.12061.pdf))
-    - Adversarial RL Grid World algorithm
-- Continuous Adaptation via Meta-Learning in Nonstationary and Competitive Environments - M. Al Shedivat, T. Bansal, et al. ([paper](https://arxiv.org/pdf/1710.03641.pdf)) ([code](https://github.com/openai/robosumo))
-	- 'Spider' paper
-	- Similar meta-model & outer-loop structure
-- Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks - C. Finn, P. Abbeel & S. Levine ([paper](https://arxiv.org/pdf/1703.03400.pdf)) ([code](https://github.com/cbfinn/maml))
-	- Meta-Learning Architecture
-	- Created MAML for Few-Shot Supervised Learning as basline
-- Meta-World: A Benchmark and Evaluation for Multi-Task and Meta Reinforcement Learning - T. Yu, D. Quillen et al. ([paper](https://arxiv.org/pdf/1910.10897v1.pdf))
-	- Defined 'Meta-World' as task distribution
-	- Utilize as model to define task/rules distribution of different chess piece rule sets

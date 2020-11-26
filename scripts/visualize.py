@@ -4,9 +4,9 @@ from games.gardner import GardnerMiniChessGame
 from games.atomic import AtomicChessGame
 from games.dark import DarkChessGame
 from games.rifle import RifleChessGame
-# from games.gardner.GardnerMiniChessLogic import Board
+from games.gardner.GardnerMiniChessLogic import Board
 # from games.atomic.AtomicChessLogic import AtomicBoard as Board
-from games.rifle.RifleChessLogic import RifleBoard as Board
+# from games.rifle.RifleChessLogic import RifleBoard as Board
 import numpy as np
 
 args = {
@@ -29,10 +29,9 @@ args = {
     'numItersForTrainExamplesHistory': 20,
 }
 
-game = RifleChessGame()
+game = GardnerMiniChessGame()
 nnet = NNetWrapper(game)
-# nnet.load_checkpoint('temp', 'checkpoint_5.pth.tar')
-nnet.load_checkpoint('temp', 'best.pth.tar')
+nnet.load_checkpoint('temp', 'checkpoint_5.pth.tar')
 player1 = MCTS(game, nnet, args)
 player2 = 'random'
 
