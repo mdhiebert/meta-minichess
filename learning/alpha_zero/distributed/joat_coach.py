@@ -202,7 +202,8 @@ class JOATCoach():
         for i in range(1, self.args['numIters'] + 1):
 
             policies_prime = []
-            pi_sum = 0, v_sum = 0
+            pi_sum = 0
+            v_sum = 0
             counter = 0
             
             # bookkeeping

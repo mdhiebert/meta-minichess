@@ -73,8 +73,8 @@ if __name__ == "__main__": # for multiprocessing
         'evalOnBaselines': args.eval_on_baselines,
 
         'checkpoint': './temp/',
-        'load_model': not args.learning_path is None,
-        'load_folder_file': ('/'.join(args.learning_path.split('/')[:-1]),args.learning_path.split('/')[-1]),
+        'load_model': not args.loading_path is None,
+        'load_folder_file': ('/'.join(args.loading_path.split('/')[:-1]),args.loading_path.split('/')[-1]),
         'numItersForTrainExamplesHistory': 20,
     })
 
@@ -117,7 +117,7 @@ if __name__ == "__main__": # for multiprocessing
     nnet = nn(games[0])
 
     if train_args['load_model']:
-        log.info('Loading checkpoint "%s/%s"...', train_args['load_folder_file'])
+        log.info('Loading checkpoint "%s/%s"...', *train_args['load_folder_file'])
         nnet.load_checkpoint(train_args['load_folder_file'][0], train_args['load_folder_file'][1])
     else:
         log.warning('Not loading a checkpoint!')
