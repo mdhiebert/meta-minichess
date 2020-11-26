@@ -15,6 +15,8 @@ if __name__ == "__main__": # for multiprocessing
 
     parser = argparse.ArgumentParser(description='Train a multitasking minichess model.')
 
+    parser.add_argument('--loading_path', action='store', default=None, help='Path to the learning model weights.')
+
     parser.add_argument('--iterations', action='store', default='500', type=int, help='Number of full AlphaZero iterations to run for training (default: 500)')
 
     parser.add_argument('--episodes', action='store', default='100', type=int, help='Number of episodes of self-play per iteration (default: 100)' )
@@ -29,9 +31,11 @@ if __name__ == "__main__": # for multiprocessing
 
     parser.add_argument('--workers', action='store', default='1', type=int, help='The number of workers to use to process self- and arena-play. A value >1 will leverage multiprocessing. (default: 1)')
 
-    parser.add_argument('--games', dest='games', action='store', nargs='+', default='gardner', choices=['gardner', 'mallet', 'baby', 'rifle', 'dark', 'atomic'], type=str, help='The games to consider during training. (default: just gardner)')
+    parser.add_argument('--games', dest='games', action='store', nargs='+', default='gardner', choices=['gardner', 'mallet', 'baby', 'rifle', 'dark', 'atomic'], type=str, help='The games to consider during training. If more than one game is input, we will metatrain. (default: just gardner)')
 
     parser.add_argument('--probs', action='store', nargs='+', type=float, default=None, help='The probabilities of the games to consider during training. The ith probability corresponds to the ith game provided. If no value is provided, this defaults to a uniform distribution across the provided games. (default: uniform dist)')
+
+    parser.add_argument('--task_batch_size', action='store', type=int, default=4, help='The number of tasks to sample in a given metalearning iteration. Not used if len(games) <= 1. (default: 4)')
 
     parser.add_argument('--eval_on_baselines', action='store_true', default=False, help='If passed in, we will evaluate our model against random and greedy players and plot the win rates.')
 
@@ -61,6 +65,7 @@ if __name__ == "__main__": # for multiprocessing
         'arenaComparePerGame': args.arenapergame,         # Number of games to play during arena play to determine if new net will be accepted.
         'cpuct': 1,
         'maxMoves': args.max_moves,
+        'taskBatchSize': args.task_batch_size,
 
         'numWorkers': args.workers,
         'cuda': True,
@@ -68,8 +73,8 @@ if __name__ == "__main__": # for multiprocessing
         'evalOnBaselines': args.eval_on_baselines,
 
         'checkpoint': './temp/',
-        'load_model': False,
-        'load_folder_file': ('/dev/models/8x100x50','best.pth.tar'),
+        'load_model': not args.learning_path is None,
+        'load_folder_file': ('/'.join(args.learning_path.split('/')[:-1]),args.learning_path.split('/')[-1]),
         'numItersForTrainExamplesHistory': 20,
     })
 
@@ -118,6 +123,8 @@ if __name__ == "__main__": # for multiprocessing
         log.warning('Not loading a checkpoint!')
 
     log.info('Loading the JOAT Coach...')
+
+        
     c = JOATCoach(games, probs, nnet, train_args)
     # c = Coach(g, nnet, args)
 
@@ -125,5 +132,9 @@ if __name__ == "__main__": # for multiprocessing
         log.info("Loading 'trainExamples' from file...")
         c.loadTrainExamples()
 
-    log.info('Starting the learning process 🎉')
-    c.learn()
+    if len(games) > 1:
+        log.info('Starting the metalearning process 🎉')
+        c.metalearn()
+    else:
+        log.info('Starting the learning process 🎉')
+        c.learn()

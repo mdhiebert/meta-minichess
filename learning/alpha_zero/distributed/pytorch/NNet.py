@@ -1,8 +1,10 @@
+from copy import copy
 import os
 import sys
 import time
 
 import numpy as np
+from numpy.lib.function_base import average
 from tqdm import tqdm
 
 from learning.alpha_zero.distributed.utils import *
@@ -31,14 +33,17 @@ class NNetWrapper(NeuralNet):
         self.board_x, self.board_y = (5, 5)
         self.action_size = LEN_ACTION_SPACE
 
-        if args['cuda']:
-            self.nnet.cuda()
+        # if args['cuda']: # can't happen with multiprocessing
+        #     self.nnet.cuda()
 
     def train(self, examples):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
         optimizer = optim.Adam(self.nnet.parameters())
+
+        if args['cuda']: # this is not multiprocessed so we can use CUDA
+            self.nnet = self.nnet.cuda()
 
         losses = []
 
@@ -59,7 +64,7 @@ class NNetWrapper(NeuralNet):
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
 
                 # predict
-                if args['cuda']:
+                if args['cuda']: # this is not multiprocessed so we can use CUDA
                     boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
 
                 # compute output
@@ -78,6 +83,10 @@ class NNetWrapper(NeuralNet):
                 total_loss.backward()
                 optimizer.step()
             losses.append((pi_losses.avg,v_losses.avg))
+
+        # back to CPU
+        self.nnet = self.nnet.cpu()
+
         return losses
 
     def predict(self, board):
@@ -91,7 +100,7 @@ class NNetWrapper(NeuralNet):
         board = board[np.newaxis, :, :]
         # preparing input
         board = torch.FloatTensor(board.astype(np.float64))
-        if args['cuda']: board = board.contiguous().cuda()
+        # if args['cuda']: board = board.contiguous().cuda() # does not work with multiprocessing
         board = board.view(1, self.board_x, self.board_y)
         self.nnet.eval()
         with torch.no_grad():
@@ -126,7 +135,44 @@ class NNetWrapper(NeuralNet):
         checkpoint = torch.load(filepath, map_location=map_location)
         self.nnet.load_state_dict(checkpoint['state_dict'])
 
+    def state_dict(self):
+        '''
+            Returns
+            -------
+            The state_dict of self.nnet
+        '''
+        return self.nnet.state_dict()
+
+    def load_average_params(self, state_dicts):
+        '''
+            Given a list of state_dicts, take the average across them all
+            and set self.nnet's weights as this average.
+
+            Returns
+            -------
+            the average state_dict
+        '''
+
+        first_dict = state_dicts[0]
+
+        avg_dict = {}
+
+        for key in first_dict:
+            avg_dict[key] = average(np.array([d[key] for d in state_dicts]))
+
+        self.nnet.load_state_dict(avg_dict)
+
+        return avg_dict
+
     def __getstate__(self):
         self_dict = self.__dict__.copy()
         if 'pool' in self_dict: del self_dict['pool']
         return self_dict
+
+    def __deepcopy__(self, memo):
+        net = NNetWrapper(self.game)
+        net.nnet = copy.deepcopy(self.net, memo)
+        net.board_x = self.board_x
+        net.board_y = self.board_y
+        net.action_size = self.action_size
+        return net

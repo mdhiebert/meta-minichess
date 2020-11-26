@@ -292,6 +292,33 @@ TODO
 
 ![assets/mvta_arch.png](assets/mvta_arch.png)
 
+Our meta-training architecture for multiple variants is very similar to [MAML for RL](https://arxiv.org/pdf/1703.03400.pdf), and was inspired by a project done for [MIT's 6.882](https://phillipi.github.io/6.882/2019/) in Spring of 2019: [INSECT](https://echen9898.github.io/assets/2019-05-18/882_Report.pdf). The double gradient loop of MAML requires many self-play iterations, which prove to be the most costly portion of the training loop. By removing the second gradient loop and instead take an average over the policies found in the inner loop, we cut down on a significant amount of training time. In exposing our model to our distribution of tasks by sampling a rule-variant and running it through our SVTA, we aim to produce a Jack-of-All-Trades (JOAT) model that can quickly adapt to different variants.
+
+In pseudocode:
+
+```python
+policy = random_init_policy()
+
+while not done:
+
+	tasks = sample(task_distribution)
+
+	policies_prime = []
+
+	for task in tasks:
+		loss = 0
+		for _ in range(K):
+			loss += mcts_iteration(policy)
+
+		policy_prime = policy - (alpha * gradient(loss))
+
+		policies_prime.append(policy_prime)
+
+	policy = average(policies_prime)
+
+return policy
+```
+
 #### Meta Multi-Variant Training Architecture
 
 ![assets/mmvta_arch.png](assets/mmvta_arch.png)

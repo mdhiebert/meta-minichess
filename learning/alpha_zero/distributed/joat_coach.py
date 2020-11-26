@@ -19,6 +19,8 @@ from learning.alpha_zero.distributed.mcts import MCTS
 
 from multiprocessing import Pool
 
+import copy
+
 log = logging.getLogger(__name__)
 
 class JOATCoach():
@@ -184,6 +186,103 @@ class JOATCoach():
                 gwinrates.append(float(nwins) / float(pwins + nwins + draws))
                 self.plot_win_rate(gwinrates, 'Greedy')
 
+    def metalearn(self):
+        """
+        Performs numIters iterations with numEps episodes of self-play in each
+        iteration. After every iteration, it retrains neural network with
+        examples in trainExamples (which has a maximum length of maxlenofQueue).
+        It then pits the new neural network against the old one and accepts it
+        only if it wins >= updateThreshold fraction of games.
+        """
+
+        avg_losses = []
+        rwinrates = []
+        gwinrates = []
+
+        for i in range(1, self.args['numIters'] + 1):
+
+            policies_prime = []
+            pi_sum = 0, v_sum = 0
+            counter = 0
+            
+            # bookkeeping
+            log.info(f'Starting Meta-Iteration #{i} ...')
+
+            # for task in tasks...
+            for _ in range(self.args['taskBatchSize']):
+
+                # create deepcopy for training a theta'
+                policy_prime = copy.deepcopy(self.nnet)
+            
+                # sample a game (task)
+                game = np.random.choice(self.games, p=self.probs)
+                log.info(f'Sampled game {type(game).__name__} ...')
+
+                # multiprocess to get our training examples
+                iterationTrainExamples = deque([], maxlen=self.args['maxlenOfQueue'])
+                iterationTrainExamples = run_apply_async_multiprocessing(self.executeEpisode, [(MCTS(game, self.nnet, self.args), type(game)(), self.args.copy())] * self.args['numEps'], self.args['numWorkers'], desc='Self Play')
+                iterationTrainExamples = list(itertools.chain.from_iterable(iterationTrainExamples))
+
+                # shuffle examples before training
+                shuffle(iterationTrainExamples)
+
+                # train our network
+                pi_v_losses = policy_prime.train(iterationTrainExamples)
+
+                policies_prime.append(policies_prime.state_dict())
+
+                for pi,v in pi_v_losses:
+                    pi_sum += pi
+                    v_sum += v
+                    counter += 1
+            
+            # compute average parameters and load into self.nnet
+            self.nnet.load_average_params(policies_prime)
+
+            # compute average losses
+            avg_losses.append((float(pi_sum) / counter, float(v_sum) / counter, ''))
+            self.plot_current_progress(avg_losses)
+
+            # training new network, keeping a copy of the old one
+            self.nnet.save_checkpoint(folder=self.args['checkpoint'] + '/meta', filename='temp.pth.tar')
+            self.pnet.load_checkpoint(folder=self.args['checkpoint'] + '/meta', filename='temp.pth.tar')
+            pmcts = MCTS(self.games[0], self.pnet, self.args)
+
+
+            # Arena if we choose to run it
+            if self.args['arenaComparePerGame'] > 0:
+                # ARENA
+                nmcts = MCTS(self.games[0], self.nnet, self.args)
+
+                log.info('PITTING AGAINST PREVIOUS VERSION')
+                arena = Arena()
+                pwins, nwins, draws = arena.playGames(self.pnet, self.nnet, self.args, self.games)
+
+                log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
+                if pwins + nwins == 0 or float(nwins) / (pwins + nwins) < self.args['updateThreshold']:
+                    log.info('REJECTING NEW MODEL')
+                    self.nnet.load_checkpoint(folder=self.args['checkpoint'], filename='temp.pth.tar')
+                else:
+                    log.info('ACCEPTING NEW MODEL')
+                    self.nnet.save_checkpoint(folder=self.args['checkpoint'], filename=self.getCheckpointFile(i))
+                    self.nnet.save_checkpoint(folder=self.args['checkpoint'], filename='best.pth.tar')
+
+            # our baselines if we choose to run them
+            if self.args['evalOnBaselines']:
+                mod_args = self.args.copy()
+                mod_args['arenaComparePerGame'] = 20
+
+                log.info('Evaluating against baselines...')
+
+                arena = Arena()
+                pwins, nwins, draws = arena.playGames('random', self.nnet, mod_args, self.games)
+                rwinrates.append(float(nwins) / float(pwins + nwins + draws))
+                self.plot_win_rate(rwinrates, 'Random')
+
+                arena = Arena()
+                pwins, nwins, draws = arena.playGames('greedy', self.nnet, mod_args, self.games)
+                gwinrates.append(float(nwins) / float(pwins + nwins + draws))
+                self.plot_win_rate(gwinrates, 'Greedy')
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'
