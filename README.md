@@ -96,6 +96,7 @@ source .bashrc
 ```
 
 Now, it's ready to follow Quickstart Guide above!
+
 ## Scripts
 
 ### Train
