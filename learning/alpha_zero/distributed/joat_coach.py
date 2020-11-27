@@ -44,7 +44,7 @@ class JOATCoach():
         self.probs = probs
         assert round(sum(self.probs), 6) == 1, f'Expected probabilites to sum to 1, instead summed to {sum(self.probs)}'
         self.nnet = nnet
-        self.pnet = self.nnet.__class__(self.games[0])  # the competitor network
+        self.pnet = self.nnet.__class__(self.games[0], args)  # the competitor network
         self.args = args
         self.mcts = None
         self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
@@ -230,7 +230,7 @@ class JOATCoach():
                 # train our network
                 pi_v_losses = policy_prime.train(iterationTrainExamples)
 
-                policies_prime.append(policies_prime.state_dict())
+                policies_prime.append(policy_prime.state_dict())
 
                 for pi,v in pi_v_losses:
                     pi_sum += pi
@@ -241,7 +241,7 @@ class JOATCoach():
             self.nnet.load_average_params(policies_prime)
 
             # compute average losses
-            avg_losses.append((float(pi_sum) / counter, float(v_sum) / counter, ''))
+            avg_losses.append((float(pi_sum) / counter, float(v_sum) / counter, 'Meta'))
             self.plot_current_progress(avg_losses)
 
             # training new network, keeping a copy of the old one
@@ -277,12 +277,19 @@ class JOATCoach():
 
                 arena = Arena()
                 pwins, nwins, draws = arena.playGames('random', self.nnet, mod_args, self.games)
-                rwinrates.append(float(nwins) / float(pwins + nwins + draws))
+                total_games = pwins + nwins + draws
+                wr = float(nwins) / float(total_games)
+                dr = float(draws) / float(total_games)
+                lsr = float(pwins) / float(total_games)
+                rwinrates.append((wr,dr,lsr))
                 self.plot_win_rate(rwinrates, 'Random')
 
                 arena = Arena()
                 pwins, nwins, draws = arena.playGames('greedy', self.nnet, mod_args, self.games)
-                gwinrates.append(float(nwins) / float(pwins + nwins + draws))
+                wr = float(nwins) / float(total_games)
+                dr = float(draws) / float(total_games)
+                lsr = float(pwins) / float(total_games)
+                rwinrates.append((wr,dr,lsr))
                 self.plot_win_rate(gwinrates, 'Greedy')
 
     def getCheckpointFile(self, iteration):
@@ -327,7 +334,8 @@ class JOATCoach():
             'AtomicChessGame': (0, 1, 0),
             'DarkChessGame': (0, 1, 0.5),
             'MonochromaticChessGame': (0, 1, 1),
-            'BichromaticChessGame': (0, 0.5, 1)
+            'BichromaticChessGame': (0, 0.5, 1),
+            'Meta': (0, 0, 1)
         }
 
         l_dict = {
@@ -338,7 +346,8 @@ class JOATCoach():
             'AtomicChessGame': [],
             'DarkChessGame': [],
             'MonochromaticChessGame': [],
-            'BichromaticChessGame': []
+            'BichromaticChessGame': [],
+            'Meta': []
         }
 
         plt.cla()
@@ -377,13 +386,16 @@ class JOATCoach():
         plt.cla()
         plt.clf()
 
-        print(win_rates)
+        wr,dr,lr = map(list,zip(*win_rates))
 
-        plt.plot(win_rates, c='r')
+        plt.plot(wr, label='Win Rate', c='g')
+        plt.plot(dr, label='Draw Rate', c='o')
+        plt.plot(lr, label='Loss Rate', c='r')
 
-        plt.title('Win Rate vs {}'.format(opponent))
+
+        plt.title('Win/Draw/Loss Rates vs {}'.format(opponent))
         plt.xlabel('Iteration (~10^2 Games)')
-        plt.ylabel('Win Rate')
+        plt.ylabel('Rate')
         plt.savefig(f'results/win_rates_{opponent}.png')
 
     def __getstate__(self):

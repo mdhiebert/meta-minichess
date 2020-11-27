@@ -47,10 +47,14 @@ conda env create -f environment.yml
 conda activate mmc
 ```
 
-Launch experiment to train a jack-of-all-trades minichess model with distributed computing:
-
+Metatrain a jack-of-all-trades minichess model from a pretrained gardner model:
 ```bash
-python -m scripts.train --workers=8 --games gardner mallet baby rifle dark atomic --eval_on_baselines --arenapergame=0
+python -m scripts.train --loading_path ./pretrained_models/pytorch/gardner.pth.tar --episodes=50 --arenapergame=0 --workers=8 --epochs=5 --games gardner mallet baby dark atomic rifle
+```
+
+Train a Gardner minichess model from scratch:
+```bash
+python -m scripts.train --iterations=25 --arenapergame=0 --workers=8 --games gardner
 ```
 
 To use more workers, simply bump up the `--workers` value.

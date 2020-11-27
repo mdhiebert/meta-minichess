@@ -7,6 +7,8 @@ from games.rifle import RifleChessGame
 from games.dark import DarkChessGame
 from games.atomic import AtomicChessGame
 
+import torch
+
 import coloredlogs
 import logging
 
@@ -35,9 +37,23 @@ if __name__ == "__main__": # for multiprocessing
 
     parser.add_argument('--probs', action='store', nargs='+', type=float, default=None, help='The probabilities of the games to consider during training. The ith probability corresponds to the ith game provided. If no value is provided, this defaults to a uniform distribution across the provided games. (default: uniform dist)')
 
+    parser.add_argument('--learning_rate', action='store', type=float, default=0.001, help='The learning rate during training.')
+
+    parser.add_argument('--dropout', action='store', type=float, default=0.3, help='Dropout rate during training.')
+
+    parser.add_argument('--epochs', action='store', type=int, default=10, help='Number of epochs during training.')
+
+    parser.add_argument('--batch_size', action='store', type=int, default=64, help='Batch size during training.')
+
+    parser.add_argument('--num_channels', action='store', type=int, default=512, help='Number of channels to use in the model during training.')
+
     parser.add_argument('--task_batch_size', action='store', type=int, default=4, help='The number of tasks to sample in a given metalearning iteration. Not used if len(games) <= 1. (default: 4)')
 
     parser.add_argument('--eval_on_baselines', action='store_true', default=False, help='If passed in, we will evaluate our model against random and greedy players and plot the win rates.')
+    
+    parser.add_argument('--use_cuda', action='store_true', default=torch.cuda.is_available(), help='If passed, force the system to use CUDA. (default: whether or not CUDA is available)')
+
+    parser.add_argument('--dont_use_cuda', action='store_true', default=False, help='Force the system NOT to use CUDA, even if its available (default: False)')
 
     parser.add_argument('--debug', action='store_true', default=False)
 
@@ -52,6 +68,17 @@ if __name__ == "__main__": # for multiprocessing
     else:
         coloredlogs.install(level='INFO')
 
+    # cuda logic
+    use_cuda = False
+    if args.use_cuda:
+        use_cuda = True
+    if args.dont_use_cuda:
+        use_cuda = False
+
+    if use_cuda:
+        log.info('Using CUDA.')
+    else:
+        log.info('Not using CUDA.')
 
     # initialize args
 
@@ -68,7 +95,13 @@ if __name__ == "__main__": # for multiprocessing
         'taskBatchSize': args.task_batch_size,
 
         'numWorkers': args.workers,
-        'cuda': True,
+
+        'lr': args.learning_rate,
+        'dropout': args.dropout,
+        'epochs': args.epochs,
+        'batch_size': args.batch_size,
+        'cuda': use_cuda,
+        'num_channels': args.num_channels,
 
         'evalOnBaselines': args.eval_on_baselines,
 
@@ -114,7 +147,7 @@ if __name__ == "__main__": # for multiprocessing
     log.info('Loading %s...', 'Minichess Variants')
 
     log.info('Loading %s...', nn.__name__)
-    nnet = nn(games[0])
+    nnet = nn(games[0], train_args)
 
     if train_args['load_model']:
         log.info('Loading checkpoint "%s/%s"...', *train_args['load_folder_file'])

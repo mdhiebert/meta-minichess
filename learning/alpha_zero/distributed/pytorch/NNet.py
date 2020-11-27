@@ -1,4 +1,4 @@
-from copy import copy
+import copy
 import os
 import sys
 import time
@@ -15,25 +15,18 @@ import torch.optim as optim
 
 from .MCGardnerNNet import MCGardnerNNet as mcnet
 
-args = dict({
-    'lr': 0.001,
-    'dropout': 0.3,
-    'epochs': 10,
-    'batch_size': 64,
-    'cuda': torch.cuda.is_available(),
-    'num_channels': 512,
-})
-
 LEN_ACTION_SPACE = 1225
 
 class NNetWrapper(NeuralNet):
-    def __init__(self, game):
+    def __init__(self, game, args):
         self.nnet = mcnet(game, args)
         self.game = game
         self.board_x, self.board_y = (5, 5)
         self.action_size = LEN_ACTION_SPACE
 
-        # if args['cuda']: # can't happen with multiprocessing
+        self.args = args.copy()
+
+        # if self.args['cuda']: # can't happen with multiprocessing
         #     self.nnet.cuda()
 
     def train(self, examples):
@@ -42,29 +35,29 @@ class NNetWrapper(NeuralNet):
         """
         optimizer = optim.Adam(self.nnet.parameters())
 
-        if args['cuda']: # this is not multiprocessed so we can use CUDA
+        if self.args['cuda']: # this is not multiprocessed so we can use CUDA
             self.nnet = self.nnet.cuda()
 
         losses = []
 
-        for epoch in range(args['epochs']):
+        for epoch in range(self.args['epochs']):
             print('EPOCH ::: ' + str(epoch + 1))
             self.nnet.train()
             pi_losses = AverageMeter()
             v_losses = AverageMeter()
 
-            batch_count = int(len(examples) / args['batch_size'])
+            batch_count = int(len(examples) / self.args['batch_size'])
 
             t = tqdm(range(batch_count), desc='Training Net')
             for _ in t:
-                sample_ids = np.random.randint(len(examples), size=args['batch_size'])
+                sample_ids = np.random.randint(len(examples), size=self.args['batch_size'])
                 boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
 
                 # predict
-                if args['cuda']: # this is not multiprocessed so we can use CUDA
+                if self.args['cuda']: # this is not multiprocessed so we can use CUDA
                     boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
 
                 # compute output
@@ -100,7 +93,7 @@ class NNetWrapper(NeuralNet):
         board = board[np.newaxis, :, :]
         # preparing input
         board = torch.FloatTensor(board.astype(np.float64))
-        # if args['cuda']: board = board.contiguous().cuda() # does not work with multiprocessing
+        # if self.args['cuda']: board = board.contiguous().cuda() # does not work with multiprocessing
         board = board.view(1, self.board_x, self.board_y)
         self.nnet.eval()
         with torch.no_grad():
@@ -131,7 +124,7 @@ class NNetWrapper(NeuralNet):
         filepath = os.path.join(folder, filename)
         if not os.path.exists(filepath):
             raise ("No model in path {}".format(filepath))
-        map_location = None if args['cuda'] else 'cpu'
+        map_location = None if self.args['cuda'] else 'cpu'
         checkpoint = torch.load(filepath, map_location=map_location)
         self.nnet.load_state_dict(checkpoint['state_dict'])
 
@@ -158,9 +151,10 @@ class NNetWrapper(NeuralNet):
         avg_dict = {}
 
         for key in first_dict:
-            avg_dict[key] = average(np.array([d[key] for d in state_dicts]))
+            avg_dict[key] = torch.mean(torch.stack([d[key].float() for d in state_dicts]), 0)
 
         self.nnet.load_state_dict(avg_dict)
+
 
         return avg_dict
 
@@ -170,8 +164,8 @@ class NNetWrapper(NeuralNet):
         return self_dict
 
     def __deepcopy__(self, memo):
-        net = NNetWrapper(self.game)
-        net.nnet = copy.deepcopy(self.net, memo)
+        net = NNetWrapper(self.game, self.args.copy())
+        net.nnet = copy.deepcopy(self.nnet, memo)
         net.board_x = self.board_x
         net.board_y = self.board_y
         net.action_size = self.action_size
