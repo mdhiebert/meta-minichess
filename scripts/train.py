@@ -7,6 +7,8 @@ from games.rifle import RifleChessGame
 from games.dark import DarkChessGame
 from games.atomic import AtomicChessGame
 
+import torch
+
 import coloredlogs
 import logging
 
@@ -14,6 +16,8 @@ if __name__ == "__main__": # for multiprocessing
     logging.getLogger().setLevel(logging.INFO)
 
     parser = argparse.ArgumentParser(description='Train a multitasking minichess model.')
+
+    parser.add_argument('--loading_path', action='store', default=None, help='Path to the learning model weights.')
 
     parser.add_argument('--iterations', action='store', default='500', type=int, help='Number of full AlphaZero iterations to run for training (default: 500)')
 
@@ -29,11 +33,27 @@ if __name__ == "__main__": # for multiprocessing
 
     parser.add_argument('--workers', action='store', default='1', type=int, help='The number of workers to use to process self- and arena-play. A value >1 will leverage multiprocessing. (default: 1)')
 
-    parser.add_argument('--games', dest='games', action='store', nargs='+', default='gardner', choices=['gardner', 'mallet', 'baby', 'rifle', 'dark', 'atomic'], type=str, help='The games to consider during training. (default: just gardner)')
+    parser.add_argument('--games', dest='games', action='store', nargs='+', default='gardner', choices=['gardner', 'mallet', 'baby', 'rifle', 'dark', 'atomic'], type=str, help='The games to consider during training. If more than one game is input, we will metatrain. (default: just gardner)')
 
     parser.add_argument('--probs', action='store', nargs='+', type=float, default=None, help='The probabilities of the games to consider during training. The ith probability corresponds to the ith game provided. If no value is provided, this defaults to a uniform distribution across the provided games. (default: uniform dist)')
 
+    parser.add_argument('--learning_rate', action='store', type=float, default=0.001, help='The learning rate during training.')
+
+    parser.add_argument('--dropout', action='store', type=float, default=0.3, help='Dropout rate during training.')
+
+    parser.add_argument('--epochs', action='store', type=int, default=10, help='Number of epochs during training.')
+
+    parser.add_argument('--batch_size', action='store', type=int, default=64, help='Batch size during training.')
+
+    parser.add_argument('--num_channels', action='store', type=int, default=512, help='Number of channels to use in the model during training.')
+
+    parser.add_argument('--task_batch_size', action='store', type=int, default=4, help='The number of tasks to sample in a given metalearning iteration. Not used if len(games) <= 1. (default: 4)')
+
     parser.add_argument('--eval_on_baselines', action='store_true', default=False, help='If passed in, we will evaluate our model against random and greedy players and plot the win rates.')
+    
+    parser.add_argument('--use_cuda', action='store_true', default=torch.cuda.is_available(), help='If passed, force the system to use CUDA. (default: whether or not CUDA is available)')
+
+    parser.add_argument('--dont_use_cuda', action='store_true', default=False, help='Force the system NOT to use CUDA, even if its available (default: False)')
 
     parser.add_argument('--debug', action='store_true', default=False)
 
@@ -48,6 +68,17 @@ if __name__ == "__main__": # for multiprocessing
     else:
         coloredlogs.install(level='INFO')
 
+    # cuda logic
+    use_cuda = False
+    if args.use_cuda:
+        use_cuda = True
+    if args.dont_use_cuda:
+        use_cuda = False
+
+    if use_cuda:
+        log.info('Using CUDA.')
+    else:
+        log.info('Not using CUDA.')
 
     # initialize args
 
@@ -61,15 +92,22 @@ if __name__ == "__main__": # for multiprocessing
         'arenaComparePerGame': args.arenapergame,         # Number of games to play during arena play to determine if new net will be accepted.
         'cpuct': 1,
         'maxMoves': args.max_moves,
+        'taskBatchSize': args.task_batch_size,
 
         'numWorkers': args.workers,
-        'cuda': True,
+
+        'lr': args.learning_rate,
+        'dropout': args.dropout,
+        'epochs': args.epochs,
+        'batch_size': args.batch_size,
+        'cuda': use_cuda,
+        'num_channels': args.num_channels,
 
         'evalOnBaselines': args.eval_on_baselines,
 
         'checkpoint': './temp/',
-        'load_model': False,
-        'load_folder_file': ('/dev/models/8x100x50','best.pth.tar'),
+        'load_model': not args.loading_path is None,
+        'load_folder_file': ('/'.join(args.loading_path.split('/')[:-1]),args.loading_path.split('/')[-1]),
         'numItersForTrainExamplesHistory': 20,
     })
 
@@ -109,15 +147,17 @@ if __name__ == "__main__": # for multiprocessing
     log.info('Loading %s...', 'Minichess Variants')
 
     log.info('Loading %s...', nn.__name__)
-    nnet = nn(games[0])
+    nnet = nn(games[0], train_args)
 
     if train_args['load_model']:
-        log.info('Loading checkpoint "%s/%s"...', train_args['load_folder_file'])
+        log.info('Loading checkpoint "%s/%s"...', *train_args['load_folder_file'])
         nnet.load_checkpoint(train_args['load_folder_file'][0], train_args['load_folder_file'][1])
     else:
         log.warning('Not loading a checkpoint!')
 
     log.info('Loading the JOAT Coach...')
+
+        
     c = JOATCoach(games, probs, nnet, train_args)
     # c = Coach(g, nnet, args)
 
@@ -125,5 +165,9 @@ if __name__ == "__main__": # for multiprocessing
         log.info("Loading 'trainExamples' from file...")
         c.loadTrainExamples()
 
-    log.info('Starting the learning process 🎉')
-    c.learn()
+    if len(games) > 1:
+        log.info('Starting the metalearning process 🎉')
+        c.metalearn()
+    else:
+        log.info('Starting the learning process 🎉')
+        c.learn()

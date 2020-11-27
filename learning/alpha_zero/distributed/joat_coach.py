@@ -19,6 +19,8 @@ from learning.alpha_zero.distributed.mcts import MCTS
 
 from multiprocessing import Pool
 
+import copy
+
 log = logging.getLogger(__name__)
 
 class JOATCoach():
@@ -42,7 +44,7 @@ class JOATCoach():
         self.probs = probs
         assert round(sum(self.probs), 6) == 1, f'Expected probabilites to sum to 1, instead summed to {sum(self.probs)}'
         self.nnet = nnet
-        self.pnet = self.nnet.__class__(self.games[0])  # the competitor network
+        self.pnet = self.nnet.__class__(self.games[0], args)  # the competitor network
         self.args = args
         self.mcts = None
         self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
@@ -184,6 +186,111 @@ class JOATCoach():
                 gwinrates.append(float(nwins) / float(pwins + nwins + draws))
                 self.plot_win_rate(gwinrates, 'Greedy')
 
+    def metalearn(self):
+        """
+        Performs numIters iterations with numEps episodes of self-play in each
+        iteration. After every iteration, it retrains neural network with
+        examples in trainExamples (which has a maximum length of maxlenofQueue).
+        It then pits the new neural network against the old one and accepts it
+        only if it wins >= updateThreshold fraction of games.
+        """
+
+        avg_losses = []
+        rwinrates = []
+        gwinrates = []
+
+        for i in range(1, self.args['numIters'] + 1):
+
+            policies_prime = []
+            pi_sum = 0
+            v_sum = 0
+            counter = 0
+            
+            # bookkeeping
+            log.info(f'Starting Meta-Iteration #{i} ...')
+
+            # for task in tasks...
+            for _ in range(self.args['taskBatchSize']):
+
+                # create deepcopy for training a theta'
+                policy_prime = copy.deepcopy(self.nnet)
+            
+                # sample a game (task)
+                game = np.random.choice(self.games, p=self.probs)
+                log.info(f'Sampled game {type(game).__name__} ...')
+
+                # multiprocess to get our training examples
+                iterationTrainExamples = deque([], maxlen=self.args['maxlenOfQueue'])
+                iterationTrainExamples = run_apply_async_multiprocessing(self.executeEpisode, [(MCTS(game, self.nnet, self.args), type(game)(), self.args.copy())] * self.args['numEps'], self.args['numWorkers'], desc='Self Play')
+                iterationTrainExamples = list(itertools.chain.from_iterable(iterationTrainExamples))
+
+                # shuffle examples before training
+                shuffle(iterationTrainExamples)
+
+                # train our network
+                pi_v_losses = policy_prime.train(iterationTrainExamples)
+
+                policies_prime.append(policy_prime.state_dict())
+
+                for pi,v in pi_v_losses:
+                    pi_sum += pi
+                    v_sum += v
+                    counter += 1
+            
+            # compute average parameters and load into self.nnet
+            self.nnet.load_average_params(policies_prime)
+
+            # compute average losses
+            avg_losses.append((float(pi_sum) / counter, float(v_sum) / counter, 'Meta'))
+            self.plot_current_progress(avg_losses)
+
+            # training new network, keeping a copy of the old one
+            self.nnet.save_checkpoint(folder=self.args['checkpoint'] + '/meta', filename='temp.pth.tar')
+            self.pnet.load_checkpoint(folder=self.args['checkpoint'] + '/meta', filename='temp.pth.tar')
+            pmcts = MCTS(self.games[0], self.pnet, self.args)
+
+
+            # Arena if we choose to run it
+            if self.args['arenaComparePerGame'] > 0:
+                # ARENA
+                nmcts = MCTS(self.games[0], self.nnet, self.args)
+
+                log.info('PITTING AGAINST PREVIOUS VERSION')
+                arena = Arena()
+                pwins, nwins, draws = arena.playGames(self.pnet, self.nnet, self.args, self.games)
+
+                log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
+                if pwins + nwins == 0 or float(nwins) / (pwins + nwins) < self.args['updateThreshold']:
+                    log.info('REJECTING NEW MODEL')
+                    self.nnet.load_checkpoint(folder=self.args['checkpoint'], filename='temp.pth.tar')
+                else:
+                    log.info('ACCEPTING NEW MODEL')
+                    self.nnet.save_checkpoint(folder=self.args['checkpoint'], filename=self.getCheckpointFile(i))
+                    self.nnet.save_checkpoint(folder=self.args['checkpoint'], filename='best.pth.tar')
+
+            # our baselines if we choose to run them
+            if self.args['evalOnBaselines']:
+                mod_args = self.args.copy()
+                mod_args['arenaComparePerGame'] = 20
+
+                log.info('Evaluating against baselines...')
+
+                arena = Arena()
+                pwins, nwins, draws = arena.playGames('random', self.nnet, mod_args, self.games)
+                total_games = pwins + nwins + draws
+                wr = float(nwins) / float(total_games)
+                dr = float(draws) / float(total_games)
+                lsr = float(pwins) / float(total_games)
+                rwinrates.append((wr,dr,lsr))
+                self.plot_win_rate(rwinrates, 'Random')
+
+                arena = Arena()
+                pwins, nwins, draws = arena.playGames('greedy', self.nnet, mod_args, self.games)
+                wr = float(nwins) / float(total_games)
+                dr = float(draws) / float(total_games)
+                lsr = float(pwins) / float(total_games)
+                rwinrates.append((wr,dr,lsr))
+                self.plot_win_rate(gwinrates, 'Greedy')
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'
@@ -227,7 +334,8 @@ class JOATCoach():
             'AtomicChessGame': (0, 1, 0),
             'DarkChessGame': (0, 1, 0.5),
             'MonochromaticChessGame': (0, 1, 1),
-            'BichromaticChessGame': (0, 0.5, 1)
+            'BichromaticChessGame': (0, 0.5, 1),
+            'Meta': (0, 0, 1)
         }
 
         l_dict = {
@@ -238,7 +346,8 @@ class JOATCoach():
             'AtomicChessGame': [],
             'DarkChessGame': [],
             'MonochromaticChessGame': [],
-            'BichromaticChessGame': []
+            'BichromaticChessGame': [],
+            'Meta': []
         }
 
         plt.cla()
@@ -257,7 +366,7 @@ class JOATCoach():
         plt.xlabel('Epochs (~10^2 Games)')
         plt.ylabel('Policy Loss')
         plt.legend()
-        plt.savefig('policy_loss.png')
+        plt.savefig('results/policy_loss.png')
 
         plt.cla()
         plt.clf()
@@ -270,21 +379,24 @@ class JOATCoach():
         plt.xlabel('Epochs (~10^2 Games)')
         plt.ylabel('Value Loss')
         plt.legend()
-        plt.savefig('value_loss.png')
+        plt.savefig('results/value_loss.png')
 
     def plot_win_rate(self, win_rates, opponent):
 
         plt.cla()
         plt.clf()
 
-        print(win_rates)
+        wr,dr,lr = map(list,zip(*win_rates))
 
-        plt.plot(win_rates, c='r')
+        plt.plot(wr, label='Win Rate', c='g')
+        plt.plot(dr, label='Draw Rate', c='o')
+        plt.plot(lr, label='Loss Rate', c='r')
 
-        plt.title('Win Rate vs {}'.format(opponent))
+
+        plt.title('Win/Draw/Loss Rates vs {}'.format(opponent))
         plt.xlabel('Iteration (~10^2 Games)')
-        plt.ylabel('Win Rate')
-        plt.savefig(f'win_rates_{opponent}.png')
+        plt.ylabel('Rate')
+        plt.savefig(f'results/win_rates_{opponent}.png')
 
     def __getstate__(self):
         self_dict = self.__dict__.copy()

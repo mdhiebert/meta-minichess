@@ -19,8 +19,7 @@ class AtomicBoard(Board):
         if abs(flat_pieces[j]) == Board.KING:
             self.player_won = player
 
-        is_capture = q != 0
-
+        is_capture = (q != Board.BLANK)
 
         # in atomic chess, we remove all non-pawn pieces surrounding captured piece
         if is_capture:
@@ -32,11 +31,10 @@ class AtomicBoard(Board):
                 if abs(flat_pieces[neighbor]) not in (Board.PAWN, Board.INF):
                     board = put(board, neighbor, Board.BLANK)
 
-            # skip extra logic for piece p
-            p = -1
+            return self.rotate(board)
         else:
-            board = put(board, i, Board.BLANK)
             board = put(board, j, board[i])
+            board = put(board, i, Board.BLANK)
 
         # Castling rights, we move the rook or capture the opponent's
         if i == self.bottom_left: wc = (False, wc[1])
