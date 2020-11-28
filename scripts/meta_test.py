@@ -19,23 +19,15 @@ if __name__ == "__main__": # for multiprocessing
 
     parser.add_argument('--loading_path', action='store', default=None, help='Path to the JOAT model weights.')
 
-    # parser.add_argument('--iterations', action='store', default='500', type=int, help='Number of full AlphaZero iterations to run for training (default: 500)')
-
     parser.add_argument('--episodes', action='store', default='100', type=int, help='Number of episodes of self-play for adaptation og JOAT (default: 100)' )
-
-    # parser.add_argument('--mcts_sims', action='store', default='200', type=int, help='Number of MCTS simulations to perform per action.')
 
     parser.add_argument('--arenapergame', action='store', default='10', type=int, help='The number of Arena Games to conduct per game variant. This number will be divided in half to give the model equal reps as both black and white. If this is 0, Arena will be skipped. (default: 10)')
 
     parser.add_argument('--max_moves', action='store', default='75', type=int, help='The maximum number of moves permitted in a minichess game before declaring a draw (default: 75)')
 
-    # parser.add_argument('--win_threshold', action='store', default='0.6', type=float, help='The win threshold above which a new model must reach during arena-play to become the new best model (default: 0.6)')
-
     parser.add_argument('--workers', action='store', default='1', type=int, help='The number of workers to use to process self- and arena-play. A value >1 will leverage multiprocessing. (default: 1)')
 
     parser.add_argument('--games', dest='games', action='store', nargs='+', default='gardner', choices=['gardner', 'mallet', 'baby', 'rifle', 'dark', 'atomic'], type=str, help='The games to consider during testing. The adapted JOAT model will be assessed for each variant. (default: just gardner)')
-
-    # parser.add_argument('--probs', action='store', nargs='+', type=float, default=None, help='The probabilities of the games to consider during training. The ith probability corresponds to the ith game provided. If no value is provided, this defaults to a uniform distribution across the provided games. (default: uniform dist)')
 
     parser.add_argument('--learning_rate', action='store', type=float, default=0.001, help='The learning rate during adaptation.')
 
@@ -46,8 +38,6 @@ if __name__ == "__main__": # for multiprocessing
     parser.add_argument('--batch_size', action='store', type=int, default=64, help='Batch size during adaptation.')
 
     parser.add_argument('--num_channels', action='store', type=int, default=512, help='Number of channels to use in the model during adaptation.') #defined by the input model?
-
-    # parser.add_argument('--task_batch_size', action='store', type=int, default=4, help='The number of tasks to sample in a given metalearning iteration. Not used if len(games) <= 1. (default: 4)')
 
     parser.add_argument('--eval_on_baselines', action='store_true', default=False, help='If passed in, we will evaluate our model against random and greedy players and plot the win rates.')
     

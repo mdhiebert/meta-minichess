@@ -141,6 +141,8 @@ class JOATPitter():
             arena = Arena(lambda x: np.argmax(joatmcts.getActionProb(x, temp=0)),
                         lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
             pwins, nwins, draws = arena.playGames(self.args.arenaComparePerGame)
+            joatwinrates.append(float(nwins) / float(pwins + nwins + draws))
+            self.plot_win_rate(joatwinrates, 'Original JOAT')
 
             log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
 

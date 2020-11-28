@@ -10,6 +10,7 @@ See also: [minichess](https://github.com/mdhiebert/minichess) and [gym-minichess
 - [Quickstart](#quickstart)
 - [Scripts](#scripts)
 	- [Train](#train)
+	[Test](#test)
 - [GCloud](#gcloud)
 - [Objective](#objective)
 - [Methodology](#methodology)
@@ -137,6 +138,63 @@ optional arguments:
                         random and greedy players and plot the win rates.
   --debug
 
+```
+
+### Test
+
+For more details on testing, refer to the help:
+
+```bash
+$ python -m scripts.meta_test --help
+usage: meta_test.py [-h] [--loading_path LOADING_PATH] [--episodes EPISODES]
+                    [--arenapergame ARENAPERGAME] [--max_moves MAX_MOVES]
+                    [--workers WORKERS]
+                    [--games {gardner,mallet,baby,rifle,dark,atomic} [{gardner,mallet,baby,rifle,dark,atomic} ...]]
+                    [--learning_rate LEARNING_RATE] [--dropout DROPOUT]
+                    [--epochs EPOCHS] [--batch_size BATCH_SIZE]
+                    [--num_channels NUM_CHANNELS] [--eval_on_baselines]
+                    [--use_cuda] [--dont_use_cuda] [--debug]
+
+Test a JOAT minichess model via n-shot adaptation.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --loading_path LOADING_PATH
+                        Path to the JOAT model weights.
+  --episodes EPISODES   Number of episodes of self-play for adaptation og JOAT
+                        (default: 100)
+  --arenapergame ARENAPERGAME
+                        The number of Arena Games to conduct per game variant.
+                        This number will be divided in half to give the model
+                        equal reps as both black and white. If this is 0,
+                        Arena will be skipped. (default: 10)
+  --max_moves MAX_MOVES
+                        The maximum number of moves permitted in a minichess
+                        game before declaring a draw (default: 75)
+  --workers WORKERS     The number of workers to use to process self- and
+                        arena-play. A value >1 will leverage multiprocessing.
+                        (default: 1)
+  --games {gardner,mallet,baby,rifle,dark,atomic} [{gardner,mallet,baby,rifle,dark,atomic} ...]
+                        The games to consider during testing. The adapted JOAT
+                        model will be assessed for each variant. (default:
+                        just gardner)
+  --learning_rate LEARNING_RATE
+                        The learning rate during adaptation.
+  --dropout DROPOUT     Dropout rate during adaptation.
+  --epochs EPOCHS       Number of epochs during adaptation.
+  --batch_size BATCH_SIZE
+                        Batch size during adaptation.
+  --num_channels NUM_CHANNELS
+                        Number of channels to use in the model during
+                        adaptation.
+  --eval_on_baselines   If passed in, we will evaluate our model against
+                        random and greedy players and plot the win rates.
+  --use_cuda            If passed, force the system to use CUDA. (default:
+                        whether or not CUDA is available)
+  --dont_use_cuda       Force the system NOT to use CUDA, even if its
+                        available (default: False)
+  --debug
+  
 ```
 
 ## Pseudocode
