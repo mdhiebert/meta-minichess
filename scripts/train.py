@@ -27,7 +27,7 @@ if __name__ == "__main__": # for multiprocessing
 
     parser.add_argument('--arenapergame', action='store', default='10', type=int, help='The number of Arena Games to conduct per game variant per iteration. This number will be divided in half to give the model equal reps as both black and white. If this is 0, Arena will be skipped. (default: 10)')
 
-    parser.add_argument('--max_moves', action='store', default='75', type=int, help='The maximum number of moves permitted in a minichess game before declaring a draw (default: 75)')
+    parser.add_argument('--max_moves', action='store', default='200', type=int, help='The maximum number of moves permitted in a minichess game before declaring a draw (default: 200)')
 
     parser.add_argument('--win_threshold', action='store', default='0.6', type=float, help='The win threshold above which a new model must reach during arena-play to become the new best model (default: 0.6)')
 

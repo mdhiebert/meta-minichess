@@ -11,7 +11,7 @@ class MCTS():
     """
     This class handles the MCTS tree.
     """
-    MAX_TREE_DEPTH = 100
+    # MAX_TREE_DEPTH = 100
     def __init__(self, game, nnet, args):
         self.game = game
         self.nnet = nnet
@@ -22,6 +22,7 @@ class MCTS():
         self.Ps = {}        # stores initial policy (returned by neural net)
         self.Es = {}        # stores game.getGameEnded ended for board s
         self.Vs = {}        # stores game.getValidMoves for board s
+        self.max_tree_depth = args['maxMoves']
 
     def getActionProb(self, canonicalBoard, temp=1):
         """
@@ -67,7 +68,7 @@ class MCTS():
             v: the negative of the value of the current canonicalBoard
         """
         s = self.game.stringRepresentation(canonicalBoard)
-        if depth >= MCTS.MAX_TREE_DEPTH:
+        if depth >= self.max_tree_depth:
             self.Es[s] = 1e-4  # Assume draw state or loop state as failure
             return -self.Es[s]
 
