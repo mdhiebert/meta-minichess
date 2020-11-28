@@ -29,7 +29,7 @@ class JOATArena():
         """
         pass
 
-    def playGame(self, player1, player2, game):
+    def playGame(self, player1, player2, game, max_moves=MAX_MOVES):
         """
         Executes one episode of a game.
         Returns:
@@ -89,9 +89,9 @@ class JOATArena():
 
         for game in games:
             if pnet in ['greedy', 'random']:
-                fargs.extend([(pnet, MCTS(game, nnet, args), game)] * num)
+                fargs.extend([(pnet, MCTS(game, nnet, args), game, args['maxMoves'])] * num)
             else:
-                fargs.extend([(MCTS(game, pnet, args), MCTS(game, nnet, args), game)] * num)
+                fargs.extend([(MCTS(game, pnet, args), MCTS(game, nnet, args), game, args['maxMoves'])] * num)
 
         results = run_apply_async_multiprocessing(self.playGame, fargs, num_workers, desc='Arena #1')
 

@@ -186,12 +186,12 @@ class JOATCoach():
                 self.plot_win_rate(rwinrates, 'Random')
 
                 arena = Arena()
-                pwins, nwins, draws = arena.playGames('random', self.nnet, mod_args, self.games)
+                pwins, nwins, draws = arena.playGames('greedy', self.nnet, mod_args, self.games)
                 total_games = pwins + nwins + draws
                 wr = float(nwins) / float(total_games)
                 dr = float(draws) / float(total_games)
                 lsr = float(pwins) / float(total_games)
-                rwinrates.append((wr,dr,lsr))
+                gwinrates.append((wr,dr,lsr))
                 self.plot_win_rate(gwinrates, 'Greedy')
 
     def metalearn(self):

@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 log = logging.getLogger(__name__)
 
-MAX_MOVES = 100
+MAX_MOVES = 200
 class Arena():
     """
     An Arena class where any 2 agents can be pit against each other.
