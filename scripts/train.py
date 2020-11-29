@@ -106,8 +106,8 @@ if __name__ == "__main__": # for multiprocessing
         'evalOnBaselines': args.eval_on_baselines,
 
         'checkpoint': './temp/',
-        'load_model': not args.loading_path is None,
-        'load_folder_file': ('/'.join(args.loading_path.split('/')[:-1]),args.loading_path.split('/')[-1]),
+        'load_model': not (args.loading_path is None),
+        'load_folder_file': ('/'.join(args.loading_path.split('/')[:-1]),args.loading_path.split('/')[-1]) if not (args.loading_path is None) else '',
         'numItersForTrainExamplesHistory': 20,
     })
 
