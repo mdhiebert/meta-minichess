@@ -8,19 +8,29 @@ See also: [minichess](https://github.com/mdhiebert/minichess) and [gym-minichess
 
 - [Contents](#contents)
 - [Quickstart](#quickstart)
+  - [GCloud](#gcloud)
 - [Scripts](#scripts)
-	- [Train](#train)
-	[Test](#test)
-- [GCloud](#gcloud)
+  - [Train](#train)
+  - [Test](#test)
 - [Objective](#objective)
 - [Methodology](#methodology)
-	- [Action Space](#action-space)
-		- [Legality](#legality)
-	- [MCTS](#mcts)
+- [Environment](#environment)
+  - [Variants](#variants)
+  - [minichess](#minichess)
+  - [gym-minichess](#gym-minichess)
+  - [Action Space](#action-space)
+    - [Legality](#legality)
+  - [Learning](#learning)
+    - [Single-Variant Training Architecture](#single-variant-training-architecture)
+    - [Multi-Variant Training Architecture](#multi-variant-training-architecture)
+    - [MetaFocus Training Architecture](#metafocus-training-architecture)
+  - [MCTS](#mcts)
 - [Result Log](#result-log)
-    - [Naïve Opening](#naïve-opening)
+  - [Naïve Opening](#naïve-opening)
 - [Changelog](#changelog)
 - [References](#references)
+- [Appendix](#appendix)
+  - [MCTS Pseudocode](#mcts-pseudocode)
 
 ## Quickstart
 
@@ -281,9 +291,42 @@ JOAT1 and JOAT2 vs random, greedy, etc. show superiority
 
 ## Objective
 
-TODO
+In practical application, one of the most compelling aspects of human intelligence is its adaptability. With strategy games, like chess (or its smaller variant, minichess), the value of this aspect shines most brightly in situations where rules are not static from game to game. In chess, these dynamic conditions manifest themselves as [variants of standard play](https://en.wikipedia.org/wiki/List_of_chess_variants). In real life, they may manifest themselves as changing weather or terrain conditions, or other unforeseen and sudden human/machine limitations.
+ 
+State of the art reinforcement learning models are able to achieve superhuman performance under static conditions. [AlphaZero](https://arxiv.org/pdf/1712.01815.pdf), and its successor, [MuZero](https://arxiv.org/pdf/1911.08265.pdf), have attained practically-perfect levels of skill in games like Chess, Shogi, and Go. This performance quickly deteriorates when the rules they were trained under are altered. An AlphaZero model exhibiting perfect play in [Gardner minichess](https://en.wikipedia.org/wiki/Minichess#5%C3%975_chess), say, loses TODO% of its games against a random player in variants of the game like [Atomic chess](https://en.wikipedia.org/wiki/Atomic_chess).
+ 
+To this end, we seek to create a meta-learning framework around a modified [implementation of AlphaZero](https://github.com/suragnair/alpha-zero-general) in order to train a meta-model which can identify changing conditions and provide a learning model which can quickly (≤1 AlphaZero iteration) adapt to and excel under them.
 
 ## Methodology
+
+### Environment
+ 
+Much of the initial effort was spent creating an environment to facilitate our minichess meta/reinforcement learning experiments. There were no pre-existing libraries that supported the rule variants of minichess, so we created our own.
+
+#### Variants
+ 
+We set out to implement several different variants of standard [Gardner minichess](https://en.wikipedia.org/wiki/Minichess#5%C3%975_chess):
+ 
+- [Baby Chess](https://en.wikipedia.org/wiki/Minichess#5%C3%975_chess) - a variant with the same rules, but a different starting configuration.
+- [Mallet Chess](https://en.wikipedia.org/wiki/Minichess#5%C3%975_chess) - another variant with the same rules, but a different starting configuration.
+- [Rifle Chess](https://www.chessvariants.com/difftaking.dir/rifle.html) - standard starting configuration, but captures happen "at range", where the capturing piece does not occupy the tile of the captured piece
+- [Atomic Chess](https://en.wikipedia.org/wiki/Atomic_chess) - standard starting configuration, but captures also remove the capturing piece and all non-pawn pieces surrounding the captured piece
+- [Monochromatic Chess](https://en.wikipedia.org/wiki/Monochromatic_chess) - standard starting configuration, but pieces can only move to tiles that share the color of the tile they started on
+- [Bichromatic Chess](https://en.wikipedia.org/wiki/Monochromatic_chess#Bichromatic_chess) - standard starting configuration, but pieces can only move to tiles that have the opposite color of their current tile
+- [Dark Chess](https://en.wikipedia.org/wiki/Dark_chess) - standard starting configuration, but a player can only see their own pieces and tiles that their pieces can move to, the rest remain "dark"
+- [Extinction Chess](https://en.wikipedia.org/wiki/Extinction_chess) - standard starting configuration but the victory conditions are changed, the first player to remove all of any one kind of piece from their opponent (e.g. capturing the king, or both rooks, all pawns) wins.
+
+#### minichess
+ 
+The first repository, [minichess](https://github.com/mdhiebert/minichess), was created to handle the game logic of our base ruleset, Gardner's Minichess, and several others. We implemented Gardner, Baby, Mallet, Dark, Rifle, Atomic, Monochromatic, and Bichromatic.
+ 
+Wrappers for these are implemented in `./games`. The wrapper for gardner, baby, and mallet were borrowed (with slight modification) from [Karthik Selva's fork of alpha-zero-general](https://github.com/karthikselva/alpha-zero-general).
+ 
+#### gym-minichess
+ 
+We also created an OpenAI gym environment for minichess, found at [gym-minichess](https://github.com/mdhiebert/gym-minichess).
+ 
+Work on this was halted as we pivoted towards experiments not relying on the gym substructure.
 
 ### Action Space
 
@@ -299,6 +342,222 @@ This gives us 5x5x(8x4 + 8 + 3x3) = 1225 possible actions to choose from.
 #### Legality
 
 Of course. Not all moves are valid at every step. To account for this, we simply apply a mask over illegal moves to our networks output and re-normalize.
+
+### Learning
+ 
+The first step was to train an expert-level Gardner minichess model to serve as the base of future adaptable models. The intuition was that since it had mastered the standard ruleset, its understanding of the innate mechanisms of minichess would enable it to learn other rulesets more quickly than from scratch.
+ 
+As such, we relied on the `alpha-zero-general` implementation of AlphaZero mentioned above to serve as our inner loop for AlphaZero iterations. *However*, at the time of this project, the repository did not support distributed computation, resulting in extremely slow training. To remedy this, we modified the pipeline to allow for multiprocessing. This modified system can be found in `learning/alpha_zero/distributed`.
+ 
+We thus had the following training architecture for learning on single variants:
+ 
+#### Single-Variant Training Architecture
+ 
+![assets/svta_arch.png](assets/svta_arch.png)
+ 
+TODO
+ 
+#### Multi-Variant Training Architecture
+ 
+![assets/mvta_arch.png](assets/mvta_arch.png)
+ 
+Our meta-training architecture for multiple variants is very similar to [MAML for RL](https://arxiv.org/pdf/1703.03400.pdf), and was inspired by a project done for [MIT's 6.882](https://phillipi.github.io/6.882/2019/) in Spring of 2019: [INSECT](https://echen9898.github.io/assets/2019-05-18/882_Report.pdf). The double gradient loop of MAML requires many self-play iterations, which prove to be the most costly portion of the training loop. By removing the second gradient loop and instead taking an average over the policies found in the inner loop, we cut down on a significant amount of training time. In exposing our model to our distribution of tasks by sampling a rule-variant and running it through our SVTA, we aim to produce a Jack-of-All-Trades (JOAT) model that can quickly adapt to different variants.
+ 
+In pseudocode:
+ 
+```python
+policy = random_init_policy()
+ 
+while not done:
+ 
+tasks = sample(task_distribution)
+ 
+policies_prime = []
+ 
+for task in tasks:
+loss = 0
+for _ in range(K):
+loss += mcts_iteration(policy)
+ 
+policy_prime = policy - (alpha * gradient(loss))
+ 
+policies_prime.append(policy_prime)
+ 
+policy = average(policies_prime)
+ 
+return policy
+```
+ 
+This implementation can be found at `JOATCoach.metatrain()` in `learning/alpha_zero/distributed/joat_coach.py`
+ 
+The results of our metatraining can be seen in [results](#results).
+ 
+In addition, we also tried to tackle this problem from a different angle, using [controlled dropout](https://github.com/kobiso/Controlled-Dropout) to improve performance across varying rulesets:
+ 
+#### MetaFocus Training Architecture
+ 
+![assets/mmvta_arch.png](assets/mmvta_arch.png)
+ 
+TODO
+
+## Result Log
+ 
+### Model vs Random (Atomic)
+```
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♟ ♟ ♟
+⊙ ⊙ ⊙ ⊙ ⊙
+♙ ♙ ♙ ♙ ♙
+♖ ♘ ♗ ♕ ♔
+ 
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♟ ♟ ♟
+⊙ ⊙ ⊙ ⊙ ♙
+♙ ♙ ♙ ♙ ⊙
+♖ ♘ ♗ ♕ ♔
+ 
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ⊙ ♟ ♟
+⊙ ⊙ ♟ ⊙ ♙
+♙ ♙ ♙ ♙ ⊙
+♖ ♘ ♗ ♕ ♔
+ 
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ⊙ ♟ ♟
+⊙ ⊙ ♟ ⊙ ♙
+♙ ♙ ♙ ♙ ♕
+♖ ♘ ♗ ⊙ ♔
+ 
+♜ ♞ ♝ ⊙ ♚
+♟ ♟ ⊙ ♟ ♟
+⊙ ⊙ ♟ ⊙ ♙
+⊙ ♙ ♙ ♙ ♕
+⊙ ⊙ ♗ ⊙ ♔
+ 
+♜ ♞ ⊙ ⊙ ⊙
+♟ ♟ ⊙ ⊙ ♟
+⊙ ⊙ ♟ ⊙ ⊙
+⊙ ♙ ♙ ♙ ♕
+⊙ ⊙ ♗ ⊙ ♔
+ 
+WHITE WIN
+```
+
+### Greedy Winning Move (Gardner)
+
+This move sequence stumps models in the early stages of training.
+```
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♟ ♟ ♟
+⊙ ⊙ ⊙ ⊙ ⊙
+♙ ♙ ♙ ♙ ♙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♟ ♟ ♟
+⊙ ♙ ⊙ ⊙ ⊙
+♙ ⊙ ♙ ♙ ♙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♟ ♟ ⊙
+⊙ ♙ ⊙ ⊙ ♟
+♙ ⊙ ♙ ♙ ♙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♙ ♟ ⊙
+⊙ ⊙ ⊙ ⊙ ♟
+♙ ⊙ ♙ ♙ ♙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♙ ♟ ⊙
+⊙ ⊙ ⊙ ⊙ ⊙
+♙ ⊙ ♙ ♟ ♙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♙ ♚
+♟ ♟ ⊙ ♟ ⊙
+⊙ ⊙ ⊙ ⊙ ⊙
+♙ ⊙ ♙ ♟ ♙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♙ ♚
+♟ ♟ ⊙ ♟ ⊙
+⊙ ⊙ ⊙ ⊙ ⊙
+♙ ⊙ ♙ ⊙ ♙
+♖ ♘ ♗ ♕ ♟
+
+BLACK WIN
+```
+
+At iteration ~15 it is replaced with the following sequence:
+```
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♟ ♟ ♟
+⊙ ⊙ ⊙ ⊙ ⊙
+♙ ♙ ♙ ♙ ♙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♟ ♟ ♟
+⊙ ⊙ ⊙ ♙ ⊙
+♙ ♙ ♙ ⊙ ♙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♟ ♟ ⊙
+⊙ ⊙ ⊙ ♟ ⊙
+♙ ♙ ♙ ⊙ ♙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ♟ ♟ ⊙
+⊙ ⊙ ⊙ ♙ ⊙
+♙ ♙ ♙ ⊙ ⊙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ⊙ ♟ ⊙
+⊙ ⊙ ⊙ ♟ ⊙
+♙ ♙ ♙ ⊙ ⊙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ♛ ♚
+♟ ♟ ⊙ ♟ ⊙
+⊙ ⊙ ⊙ ♙ ⊙
+♙ ♙ ⊙ ⊙ ⊙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ⊙ ♚
+♟ ♟ ⊙ ♟ ⊙
+⊙ ⊙ ⊙ ♙ ⊙
+♛ ♙ ⊙ ⊙ ⊙
+♖ ♘ ♗ ♕ ♔
+
+♜ ♞ ♝ ⊙ ♚
+♟ ♟ ⊙ ♟ ⊙
+⊙ ⊙ ⊙ ♙ ⊙
+♛ ♙ ⊙ ⊙ ♕
+♖ ♘ ♗ ⊙ ♔
+
+♜ ♞ ♝ ⊙ ♚
+♟ ♟ ⊙ ♟ ⊙
+⊙ ⊙ ⊙ ♙ ⊙
+⊙ ♙ ⊙ ⊙ ♕
+♛ ♘ ♗ ⊙ ♔
+
+♜ ♞ ♝ ⊙ ♕
+♟ ♟ ⊙ ♟ ⊙
+⊙ ⊙ ⊙ ♙ ⊙
+⊙ ♙ ⊙ ⊙ ⊙
+♛ ♘ ♗ ⊙ ♔
+
+WHITE WIN
+```
+
+
 
 ### MCTS
 
@@ -380,36 +639,14 @@ if s not in P_s:
 
 ```
 
-## Result Log
-
-### Naïve Opening
-```
-[♜][♞][♝][♛][♚]
-[♟][♟][♟][♟][♟]
-[ ][ ][ ][ ][ ]
-[♙][♙][♙][♙][♙]
-[♖][♘][♗][♕][♔]
-
-[♜][♞][♝][♛][♚]
-[♟][♟][♟][♟][♟]
-[ ][ ][ ][ ][♙]
-[♙][♙][♙][♙][ ]
-[♖][♘][♗][♕][♔]
-
-[♜][♞][♝][♛][♚]
-[♟][♟][♟][ ][♟]
-[ ][ ][ ][ ][♟]
-[♙][♙][♙][♙][ ]
-[♖][♘][♗][♕][♔]
-
-[♜][♞][♝][♛][♚]
-[♟][♟][♟][ ][♟]
-[ ][ ][♙][ ][♟]
-[♙][♙][ ][♙][ ]
-[♖][♘][♗][♕][♔]
-```
-
 ## Changelog
+
+*[11/26]* Trained Gardner model and subsequent meta model. Took ~30 hours all-in-all. Gardner iterations take substantially more time only because of hyperparameters (20 episodes / meta-task vs 100 episodes / gardner-task). We will likely bump this up if results are not satisfactory.
+ 
+*[11/25]* Bug fixes and more training. Created diagrams and added significant information to the README.
+ 
+Implemented new JOAT training loop based on MAML/INSECT.
+
 *[11/24]* Added `scripts/train.py` to facilitate training. Added ability to bypass Arena play and evaluate against random/greedy benchmarks. Modified all games to produce greedy/random players for evaluation.
 
 *[11/23]* Implemented distributed self-play and arena-play.
@@ -453,3 +690,85 @@ Error confirmed for Windows, even with running out-of-box experiments.
 - Meta-World: A Benchmark and Evaluation for Multi-Task and Meta Reinforcement Learning - T. Yu, D. Quillen et al. ([paper](https://arxiv.org/pdf/1910.10897v1.pdf))
 	- Defined 'Meta-World' as task distribution
 	- Utilize as model to define task/rules distribution of different chess piece rule sets
+
+## Appendix
+ 
+### MCTS Pseudocode
+ 
+Pseudocode base off of [alpha-zero-general](https://github.com/suragnair/alpha-zero-general/blob/master/MCTS.py) implementation.
+```
+game <- game()
+net <- net()
+ 
+Q_sa <- {} # stores Q values for s,a (as defined in the paper)
+N_sa <- {} # stores #times edge s,a was visited
+N_s <- {} # stores #times board s was visited
+P_s <- {} # stores initial policy (returned by neural net)
+E_s <- {} # stores game.getGameEnded ended for board s
+V_s <- {} # stores game.getValidMoves for board s
+ 
+board <- current board
+ 
+for iteration in NUM_MCTS_ITERATIONS:
+  search(board)
+ 
+counts <- number of times each action was visited from state board
+ 
+if temp = 0:
+  bestAs <- actions with max count
+  bestA <- sample(bestAs)
+ 
+  return onehot of len(ACTION_SPACE) with idx bestA = 1
+ 
+counts <- [x ** (1. / temp) for x in counts]
+ 
+return counts / sum(counts) # probabilities
+ 
+ 
+### SEARCH(board)
+ 
+state <- board
+ 
+if state not in E_s:
+  E_s[state] <- status of game
+ 
+if state.status != ONGOING:
+  return -1 * (value of status)
+ 
+if s not in P_s:
+  P_s[s] <- net(board) # network prediction of board
+  valid <- all current legal moves from state
+  
+  # mask invalid moves
+  # renormalize
+ 
+  if all moves were masked:
+    P_s[s] <- (P_s[s] + valids) / P_s[s]
+ 
+  V_s[s] <- valids
+ 
+  # pick action with highest upper confidence bound
+  for action in actions:
+    if action is valid:
+      if (s,a) in Q_sa:
+        u <- Q_sa[sa] + CPUCT + P_s[s][action] * sqrt(N_s[s]) / (1 + N_sa[sa])
+      else:
+        u <- CPUCT * P_s[s][action] * sqrt(N_s[s] + eps)
+ 
+  state <- apply best action to current state
+ 
+  search(state)
+ 
+  if (state, action) in Q_sa:
+    Q_sa[(s, a)] <- (N_sa[(s, a)] * Q_sa[(s, a)] + v) / (N_sa[(s, a)] + 1)
+    N_sa[(s, a)] <- N_sa[(s, a)] + 1
+ 
+  else:
+    Q_sa[(s,a)] <- v
+    N_sa[(s,a)] <- 1
+ 
+  N_s[s] <- N_s + 1
+ 
+  return -v
+ 
+```

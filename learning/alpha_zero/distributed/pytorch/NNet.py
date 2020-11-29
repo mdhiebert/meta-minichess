@@ -1,4 +1,5 @@
 import copy
+from games.gardner.GardnerMiniChessGame import GardnerMiniChessGame
 import os
 import sys
 import time
@@ -15,14 +16,14 @@ import torch.optim as optim
 
 from .MCGardnerNNet import MCGardnerNNet as mcnet
 
-LEN_ACTION_SPACE = 1225
+# LEN_ACTION_SPACE = 1225
 
 class NNetWrapper(NeuralNet):
     def __init__(self, game, args):
         self.nnet = mcnet(game, args)
         self.game = game
         self.board_x, self.board_y = (5, 5)
-        self.action_size = LEN_ACTION_SPACE
+        self.action_size = GardnerMiniChessGame().getActionSize()
 
         self.args = args.copy()
 
