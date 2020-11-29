@@ -61,7 +61,7 @@ class JOATPitter():
         while True:
             episodeStep += 1
             canonicalBoard = game.getCanonicalForm(board, self.curPlayer)
-            temp = int(episodeStep < self.args.tempThreshold)
+            temp = int(episodeStep < self.args['tempThreshold'])
 
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             sym = game.getSymmetries(canonicalBoard, pi)
@@ -75,7 +75,7 @@ class JOATPitter():
             
             moves += 1
 
-            if moves >= self.args.maxMoves:
+            if moves >= self.args['maxMoves']:
                 r = 1e-4
 
             if r != 0:
@@ -99,48 +99,39 @@ class JOATPitter():
             log.info(f'Self-playing game {type(game).__name__} ...')
 
             # run self play on game variante
-            variationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
+            variationTrainExamples = deque([], maxlen=self.args['maxlenOfQueue'])
 
-            for _ in tqdm(range(self.args.numEps), desc="Self Play"):
+            for _ in tqdm(range(self.args['numEps']), desc="Self Play"):
                 self.mcts = MCTS(game, self.joat, self.args)  # reset search tree
                 variationTrainExamples += self.executeEpisode(game)
 
-            # save the iteration examples to the history 
-            self.trainExamplesHistory.append(variationTrainExamples)
-
-            if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
-                log.warning(
-                    f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
-                self.trainExamplesHistory.pop(0)
             # backup history to a file
             # NB! the examples were collected using the model from the previous iteration, so (i-1)  
             self.saveTrainExamples(type(game).__name__)
 
             # shuffle examples before training
             trainExamples = []
-            for e in self.trainExamplesHistory:
+            for e in variationTrainExamples:
                 trainExamples.extend(e)
             shuffle(trainExamples)
 
-            # training new network, keeping a copy of the old one
-            self.joat.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+            # training new network
             joatmcts = MCTS(game, self.joat, self.args)
-
-            pi_v_losses = self.joat.train(trainExamples)
+            
+            pi_v_losses = self.adapt_joat.train(trainExamples)
+            adapt_joatmcts = MCTS(game, self.adapt_joat, self.args)
 
             for pi,v in pi_v_losses:
                 losses.append((pi, v, type(game).__name__))
 
             self.plot_current_progress(losses)
 
-            adapt_joatmcts = MCTS(game, self.adapt_joat, self.args)
-
             # ARENA
 
             log.info('PITTING ADAPTED AGAINST ORIGINAL JOAT')
             arena = Arena(lambda x: np.argmax(joatmcts.getActionProb(x, temp=0)),
                         lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
-            pwins, nwins, draws = arena.playGames(self.args.arenaComparePerGame)
+            pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
             joatwinrates.append(float(nwins) / float(pwins + nwins + draws))
             self.plot_win_rate(joatwinrates, 'Original JOAT')
 
@@ -149,13 +140,13 @@ class JOATPitter():
             if self.args.evalOnBaselines:
                 arena = Arena('random',
                             lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
-                pwins, nwins, draws = arena.playGames(self.args.arenaComparePerGame)
+                pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
                 rwinrates.append(float(nwins) / float(pwins + nwins + draws))
                 self.plot_win_rate(rwinrates, 'Random')
 
                 arena = Arena('greedy',
                             lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
-                pwins, nwins, draws = arena.playGames(self.args.arenaComparePerGame)
+                pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
                 gwinrates.append(float(nwins) / float(pwins + nwins + draws))
                 self.plot_win_rate(gwinrates, 'Greedy')
 
@@ -164,7 +155,7 @@ class JOATPitter():
         return 'checkpoint_' + str(iteration) + '.pth.tar'
 
     def saveTrainExamples(self, iteration):
-        folder = self.args.checkpoint
+        folder = self.args['checkpoint']
         if not os.path.exists(folder):
             os.makedirs(folder)
         filename = os.path.join(folder, self.getCheckpointFile(iteration) + ".examples")
