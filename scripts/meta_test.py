@@ -37,7 +37,7 @@ if __name__ == "__main__": # for multiprocessing
 
     parser.add_argument('--batch_size', action='store', type=int, default=64, help='Batch size during adaptation.')
 
-    parser.add_argument('--num_channels', action='store', type=int, default=512, help='Number of channels to use in the model during adaptation.') #defined by the input model?
+    parser.add_argument('--num_channels', action='store', type=int, default=512, help='Number of channels to use in the model during adaptation.')
 
     parser.add_argument('--eval_on_baselines', action='store_true', default=False, help='If passed in, we will evaluate our model against random and greedy players and plot the win rates.')
     
@@ -95,7 +95,7 @@ if __name__ == "__main__": # for multiprocessing
         'epochs': args.epochs,
         'batch_size': args.batch_size,
         'cuda': use_cuda,
-        'num_channels': args.num_channels, ## necessary??
+        'num_channels': args.num_channels,
 
         'evalOnBaselines': args.eval_on_baselines, # If True, will compare adapted JOAT to random and greedy players as well as original JOAT.
 
@@ -116,7 +116,7 @@ if __name__ == "__main__": # for multiprocessing
         'dark': DarkChessGame
     }
     in_games = [args.games] if type(args.games)==str else args.games
-    games = [game_to_class[g] for g in in_games]
+    games = [game_to_class[g]() for g in in_games]
 
 
     # handle imports
@@ -124,7 +124,7 @@ if __name__ == "__main__": # for multiprocessing
         from learning.alpha_zero.distributed.joat_coach import JOATCoach
         from learning.alpha_zero.distributed.pytorch.NNet import NNetWrapper as nn
         from learning.alpha_zero.distributed.utils import *
-        from learning.alpha_zero.distributed.pitter import JOATPitter
+        # from learning.alpha_zero.distributed.pitter import JOATPitter
     else:
         from learning.alpha_zero.undistributed.joat_coach import JOATCoach
         from learning.alpha_zero.undistributed.pytorch.NNet import NNetWrapper as nn
@@ -134,7 +134,6 @@ if __name__ == "__main__": # for multiprocessing
     log.info('Loading %s...', 'Minichess Variants')
 
     log.info('Loading %s...', nn.__name__)
-    print(games, train_args)
     joat = nn(games[0], train_args)
 
     # load JOAT model

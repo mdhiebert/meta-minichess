@@ -48,6 +48,12 @@ To use more workers, simply bump up the `--workers` value.
 
 See progress in terminal and updated loss plots in `./policy_loss.png` and `./value_loss.png`.
 
+To conduct testing on the JOAT model's ability to adapt to a specific game variant:
+
+```bash
+python -m scripts.meta_test --loading_path pretrained_models/pytorch/meta15.pth.tar
+```
+
 ## GCloud
 
 Spin up a VM instance via Google Cloud Compute Engine
@@ -194,7 +200,7 @@ optional arguments:
   --dont_use_cuda       Force the system NOT to use CUDA, even if its
                         available (default: False)
   --debug
-  
+
 ```
 
 ## Pseudocode

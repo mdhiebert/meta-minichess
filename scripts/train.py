@@ -140,14 +140,13 @@ if __name__ == "__main__": # for multiprocessing
         from learning.alpha_zero.distributed.pytorch.NNet import NNetWrapper as nn
         from learning.alpha_zero.distributed.utils import *
     else:
-        from learning.alpha_zero.joat_coach import JOATCoach
-        from learning.alpha_zero.pytorch.NNet import NNetWrapper as nn
-        from learning.alpha_zero.utils import *
+        from learning.alpha_zero.undistributed.joat_coach import JOATCoach
+        from learning.alpha_zero.undistributed.pytorch.NNet import NNetWrapper as nn
+        from learning.alpha_zero.undistributed.utils import *
 
     log.info('Loading %s...', 'Minichess Variants')
 
     log.info('Loading %s...', nn.__name__)
-    print(games, train_args)
     nnet = nn(games[0], train_args)
 
     if train_args['load_model']:
