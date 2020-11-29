@@ -25,7 +25,7 @@ args = dotdict({
 LEN_ACTION_SPACE = 1225
 
 class NNetWrapper(NeuralNet):
-    def __init__(self, game):
+    def __init__(self, game, args):
         self.nnet = mcnet(game, args)
         self.game = game
         self.board_x, self.board_y = (5, 5)
