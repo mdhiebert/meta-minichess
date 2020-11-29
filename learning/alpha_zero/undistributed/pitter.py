@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-from learning.alpha_zero.joat_arena import JOATArena as Arena
-from learning.alpha_zero.mcts import MCTS
+from learning.alpha_zero.undistributed.joat_arena import JOATArena as Arena
+from learning.alpha_zero.undistributed.mcts import MCTS
 
 log = logging.getLogger(__name__)
 

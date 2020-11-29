@@ -147,6 +147,7 @@ if __name__ == "__main__": # for multiprocessing
     log.info('Loading %s...', 'Minichess Variants')
 
     log.info('Loading %s...', nn.__name__)
+    print(games, train_args)
     nnet = nn(games[0], train_args)
 
     if train_args['load_model']:
