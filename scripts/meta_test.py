@@ -70,10 +70,12 @@ if __name__ == "__main__": # for multiprocessing
     else:
         log.info('Not using CUDA.')
 
-    # arena per game logic
-
+    # Value Error logic
+    if args.loading_path == None:
+        log.info('No JOAT model found; must be passed in to assess during testing')
+        raise ValueError('No JOAT model found; must be passed in via --loading_path')
     if args.arenapergame < 1:
-        log.ingo('Must have atleast one arena iteration')
+        log.info('Must have atleast one arena iteration')
         raise ValueError('Must have atleast one arena iteration')
 
     # initialize args
@@ -113,8 +115,8 @@ if __name__ == "__main__": # for multiprocessing
         'atomic': AtomicChessGame,
         'dark': DarkChessGame
     }
-
-    games = [game_to_class[g] for g in args.games]
+    in_games = [args.games] if type(args.games)==str else args.games
+    games = [game_to_class[g] for g in in_games]
 
 
     # handle imports
@@ -124,22 +126,20 @@ if __name__ == "__main__": # for multiprocessing
         from learning.alpha_zero.distributed.utils import *
         from learning.alpha_zero.distributed.pitter import JOATPitter
     else:
-        from learning.alpha_zero.joat_coach import JOATCoach
-        from learning.alpha_zero.pytorch.NNet import NNetWrapper as nn
-        from learning.alpha_zero.utils import *
-        from learning.alpha_zero.pitter import JOATPitter
+        from learning.alpha_zero.undistributed.joat_coach import JOATCoach
+        from learning.alpha_zero.undistributed.pytorch.NNet import NNetWrapper as nn
+        from learning.alpha_zero.undistributed.utils import *
+        from learning.alpha_zero.undistributed.pitter import JOATPitter
 
     log.info('Loading %s...', 'Minichess Variants')
 
     log.info('Loading %s...', nn.__name__)
     joat = nn(games[0], train_args)
 
-    if train_args['load_model']:
-        log.info('Loading checkpoint "%s/%s"...', *train_args['load_folder_file'])
-        joat.load_checkpoint(train_args['load_folder_file'][0], train_args['load_folder_file'][1])
-    else:
-        log.warning('No JOAT model found!')
-        raise ValueError('No JOAT model found; must be passed in to assess during testing')
+    # load JOAT model
+
+    log.info('Loading JOAT model "%s/%s"...', *train_args['load_folder_file'])
+    joat.load_checkpoint(train_args['load_folder_file'][0], train_args['load_folder_file'][1])
 
     log.info('Loading JOAT Pitter...')
 
