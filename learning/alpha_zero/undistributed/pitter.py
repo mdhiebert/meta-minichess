@@ -35,7 +35,7 @@ class JOATPitter():
         self.adapt_joat = joat
         self.args = args
         self.mcts = None
-        # self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
+        self.trainExamplesHistory = {}  # examples of self-play {GameClass -> examples}
 
     def executeEpisode(self, game):
         """
@@ -61,7 +61,7 @@ class JOATPitter():
         while True:
             episodeStep += 1
             canonicalBoard = game.getCanonicalForm(board, self.curPlayer)
-            temp = int(episodeStep < self.args.tempThreshold)
+            temp = int(episodeStep < self.args['tempThreshold'])
 
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             sym = game.getSymmetries(canonicalBoard, pi)
@@ -75,7 +75,7 @@ class JOATPitter():
             
             moves += 1
 
-            if moves >= self.args.maxMoves:
+            if moves >= self.args['maxMoves']:
                 r = 1e-4
 
             if r != 0:
@@ -94,85 +94,88 @@ class JOATPitter():
             joatwinrates = []
             rwinrates = []
             gwinrates = []
+            
+            if not self.args['skipSelfPlay']:
+                # bookkeeping
+                log.info(f'Self-playing game {type(game).__name__} ...')
 
-            # bookkeeping
-            log.info(f'Self-playing game {type(game).__name__} ...')
+                # run self play on game variante
+                variationTrainExamples = deque([], maxlen=self.args['maxlenOfQueue'])
 
-            # run self play on game variante
-            variationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
+                for _ in tqdm(range(self.args['numEps']), desc="Self Play"):
+                    self.mcts = MCTS(game, self.joat, self.args)  # reset search tree
+                    variationTrainExamples += self.executeEpisode(game)
 
-            for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-                self.mcts = MCTS(game, self.joat, self.args)  # reset search tree
-                variationTrainExamples += self.executeEpisode(game)
+                # shuffle examples before training
+                trainExamples = []
+                for e in variationTrainExamples:
+                    trainExamples.extend(e)
+                shuffle(trainExamples)
 
-            # save the iteration examples to the history 
-            self.trainExamplesHistory.append(variationTrainExamples)
+                self.trainExamplesHistory[game.__class__] = trainExamples
 
-            if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
-                log.warning(
-                    f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
-                self.trainExamplesHistory.pop(0)
-            # backup history to a file
-            # NB! the examples were collected using the model from the previous iteration, so (i-1)  
-            self.saveTrainExamples(type(game).__name__)
+                if len(self.trainExamplesHistory[game.__class__]) > self.args['numItersForTrainExamplesHistory']:
+                    log.warning(
+                        f"Removing the oldest entry in trainExamples for game. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
 
-            # shuffle examples before training
-            trainExamples = []
-            for e in self.trainExamplesHistory:
-                trainExamples.extend(e)
-            shuffle(trainExamples)
-
-            # training new network, keeping a copy of the old one
-            self.joat.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+                # backup history to a file
+                # NB! the examples were collected using the model from the previous iteration, so (i-1)  
+                self.saveTrainExamples(game.__class__)
+                
+            log.info(f'Training/Adapting network...')
+            # training new network
             joatmcts = MCTS(game, self.joat, self.args)
-
-            pi_v_losses = self.joat.train(trainExamples)
+            
+            pi_v_losses = self.adapt_joat.train(self.trainExamplesHistory)
+            adapt_joatmcts = MCTS(game, self.adapt_joat, self.args)
 
             for pi,v in pi_v_losses:
                 losses.append((pi, v, type(game).__name__))
 
             self.plot_current_progress(losses)
 
-            adapt_joatmcts = MCTS(game, self.adapt_joat, self.args)
-
             # ARENA
 
             log.info('PITTING ADAPTED AGAINST ORIGINAL JOAT')
             arena = Arena(lambda x: np.argmax(joatmcts.getActionProb(x, temp=0)),
                         lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
-            pwins, nwins, draws = arena.playGames(self.args.arenaComparePerGame)
+            pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
             joatwinrates.append(float(nwins) / float(pwins + nwins + draws))
             self.plot_win_rate(joatwinrates, 'Original JOAT')
 
-            log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
+            log.info('ADAPTED/ORIGINAL WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
 
-            if self.args.evalOnBaselines:
+            if self.args['evalOnBaselines']:
+                log.info('PITTING ADAPTED AGAINST RANDOM POLICY')
                 arena = Arena('random',
                             lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
-                pwins, nwins, draws = arena.playGames(self.args.arenaComparePerGame)
+                pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
                 rwinrates.append(float(nwins) / float(pwins + nwins + draws))
                 self.plot_win_rate(rwinrates, 'Random')
-
+                log.info('ADAPTED/RANDOM WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
+                
+                log.info('PITTING ADAPTED AGAINST GREEDY POLICY')
                 arena = Arena('greedy',
                             lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
-                pwins, nwins, draws = arena.playGames(self.args.arenaComparePerGame)
+                pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
                 gwinrates.append(float(nwins) / float(pwins + nwins + draws))
                 self.plot_win_rate(gwinrates, 'Greedy')
+                log.info('ADAPTED/GREEDY WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
 
 
-    def getCheckpointFile(self, iteration):
-        return 'checkpoint_' + str(iteration) + '.pth.tar'
+    def getCheckpointFile(self, game_class):
+        return 'checkpoint_' + game_class.__name__ + '.pth.tar'
 
-    def saveTrainExamples(self, iteration):
-        folder = self.args.checkpoint
+    def saveTrainExamples(self, game_class):
+        folder = self.args['checkpoint']
         if not os.path.exists(folder):
             os.makedirs(folder)
-        filename = os.path.join(folder, self.getCheckpointFile(iteration) + ".examples")
+        filename = os.path.join(folder, self.getCheckpointFile(game_class) + ".examples")
         with open(filename, "wb+") as f:
-            Pickler(f).dump(self.trainExamplesHistory)
+            Pickler(f).dump(self.trainExamplesHistory[game_class])
         f.closed
 
-    def loadTrainExamples(self):
+    def loadTrainExamples(self, game_class):
         modelFile = os.path.join(self.args['load_folder_file'][0], self.args['load_folder_file'][1])
         examplesFile = modelFile + ".examples"
         if not os.path.isfile(examplesFile):
@@ -183,7 +186,7 @@ class JOATPitter():
         else:
             log.info("File with trainExamples found. Loading it...")
             with open(examplesFile, "rb") as f:
-                self.trainExamplesHistory = Unpickler(f).load()
+                self.trainExamplesHistory[game_class] = Unpickler(f).load()
             log.info('Loading done!')
 
             # examples based on the model were already collected (loaded)

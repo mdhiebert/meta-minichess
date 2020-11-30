@@ -21,6 +21,8 @@ if __name__ == "__main__": # for multiprocessing
 
     parser.add_argument('--episodes', action='store', default='100', type=int, help='Number of episodes of self-play for adaptation og JOAT (default: 100)' )
 
+    parser.add_argument('--mcts_sims', action='store', default='200', type=int, help='Number of MCTS simulations to perform per action.')
+
     parser.add_argument('--arenapergame', action='store', default='10', type=int, help='The number of Arena Games to conduct per game variant. This number will be divided in half to give the model equal reps as both black and white. If this is 0, Arena will be skipped. (default: 10)')
 
     parser.add_argument('--max_moves', action='store', default='75', type=int, help='The maximum number of moves permitted in a minichess game before declaring a draw (default: 75)')
@@ -44,6 +46,8 @@ if __name__ == "__main__": # for multiprocessing
     parser.add_argument('--use_cuda', action='store_true', default=torch.cuda.is_available(), help='If passed, force the system to use CUDA. (default: whether or not CUDA is available)')
 
     parser.add_argument('--dont_use_cuda', action='store_true', default=False, help='Force the system NOT to use CUDA, even if its available (default: False)')
+
+    parser.add_argument('--skip_self_play', action='store_true', default=False, help='Skip self-play to to load in training examples; if true, must be .examples path in same directory as loading_path per game in --games(default: False)')
 
     parser.add_argument('--debug', action='store_true', default=False)
 
@@ -84,6 +88,7 @@ if __name__ == "__main__": # for multiprocessing
         'numEps': args.episodes,              # Number of complete self-play simulations to provide JOAT during adaptation.
         'tempThreshold': 15,        # ?
         'maxlenOfQueue': 200000,    # Max number of game examples provided for adaptation.
+        'numMCTSSims': args.mcts_sims,  
         'arenaComparePerGame': args.arenapergame,         # Number of games to play during arena play to assess JOAT adaptation.
         'cpuct': 1,
         'maxMoves': args.max_moves, # Per game before draw.
@@ -102,7 +107,8 @@ if __name__ == "__main__": # for multiprocessing
         'checkpoint': './temp/',
         'load_model': not args.loading_path is None,
         'load_folder_file': ('/'.join(args.loading_path.split('/')[:-1]),args.loading_path.split('/')[-1]),
-        'numItersForTrainExamplesHistory': 20,
+        'numItersForTrainExamplesHistory': 100,
+        'skipSelfPlay': args.skip_self_play,
     })
 
     # set up games
@@ -144,15 +150,13 @@ if __name__ == "__main__": # for multiprocessing
     log.info('Loading JOAT Pitter...')
 
         
-    c = JOATPitter(games, joat, train_args)
+    p = JOATPitter(games, joat, train_args)
 
-    if train_args['load_model']:
-        log.info("Loading 'trainExamples' from file...")
-        c.loadTrainExamples()
+    if train_args['skipSelfPlay']:
+        log.info("Loading 'trainExamples' per game from files...")
+        for game in games:
+            p.loadTrainExamples(game.__class__)
 
-    if len(games) > 1:
-        log.info('Starting the metalearning process 🎉')
-        c.metalearn()
-    else:
-        log.info('Starting the learning process 🎉')
-        c.learn()
+    p.adapt()
+
+    p.joat.save_checkpoint(train_args['load_folder_file'][0], train_args['load_folder_file'][1] + '_adapted')
