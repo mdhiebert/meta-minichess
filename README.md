@@ -26,7 +26,6 @@ See also: [minichess](https://github.com/mdhiebert/minichess) and [gym-minichess
     - [MetaFocus Training Architecture](#metafocus-training-architecture)
   - [MCTS](#mcts)
 - [Result Log](#result-log)
-  - [Naïve Opening](#naïve-opening)
 - [Changelog](#changelog)
 - [References](#references)
 - [Appendix](#appendix)
