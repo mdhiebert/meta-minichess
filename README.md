@@ -163,13 +163,14 @@ For more details on testing, refer to the help:
 ```bash
 $ python -m scripts.meta_test --help
 usage: meta_test.py [-h] [--loading_path LOADING_PATH] [--episodes EPISODES]
-                    [--arenapergame ARENAPERGAME] [--max_moves MAX_MOVES]
-                    [--workers WORKERS]
+                    [--mcts_sims MCTS_SIMS] [--arenapergame ARENAPERGAME]
+                    [--max_moves MAX_MOVES] [--workers WORKERS]
                     [--games {gardner,mallet,baby,rifle,dark,atomic} [{gardner,mallet,baby,rifle,dark,atomic} ...]]
                     [--learning_rate LEARNING_RATE] [--dropout DROPOUT]
                     [--epochs EPOCHS] [--batch_size BATCH_SIZE]
                     [--num_channels NUM_CHANNELS] [--eval_on_baselines]
-                    [--use_cuda] [--dont_use_cuda] [--debug]
+                    [--use_cuda] [--dont_use_cuda] [--skip_self_play]
+                    [--debug]
 
 Test a JOAT minichess model via n-shot adaptation.
 
@@ -179,6 +180,8 @@ optional arguments:
                         Path to the JOAT model weights.
   --episodes EPISODES   Number of episodes of self-play for adaptation og JOAT
                         (default: 100)
+  --mcts_sims MCTS_SIMS
+                        Number of MCTS simulations to perform per action.
   --arenapergame ARENAPERGAME
                         The number of Arena Games to conduct per game variant.
                         This number will be divided in half to give the model
@@ -209,6 +212,9 @@ optional arguments:
                         whether or not CUDA is available)
   --dont_use_cuda       Force the system NOT to use CUDA, even if its
                         available (default: False)
+  --skip_self_play      Skip self-play to to load in training examples; if
+                        true, must be .examples path in same directory as
+                        loading_path per game in --games (default: False)
   --debug
 
 ```
