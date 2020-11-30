@@ -91,9 +91,6 @@ class JOATPitter():
 
         for game in self.games:
             losses = []
-            joatwinrates = []
-            rwinrates = []
-            gwinrates = []
             
             if not self.args['skipSelfPlay']:
                 # bookkeeping
@@ -140,8 +137,8 @@ class JOATPitter():
             arena = Arena(lambda x: np.argmax(joatmcts.getActionProb(x, temp=0)),
                         lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
             pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
-            joatwinrates.append(float(nwins) / float(pwins + nwins + draws))
-            self.plot_win_rate(joatwinrates, 'Original JOAT')
+            joatwinrate = float(nwins) / float(pwins + nwins + draws)
+            log.info('Joat Win Rate vs. Original JOAT : %d' % (joatwinrate))
 
             log.info('ADAPTED/ORIGINAL WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
 
@@ -150,16 +147,16 @@ class JOATPitter():
                 arena = Arena('random',
                             lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
                 pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
-                rwinrates.append(float(nwins) / float(pwins + nwins + draws))
-                self.plot_win_rate(rwinrates, 'Random')
+                rwinrates = float(nwins) / float(pwins + nwins + draws)
+                log.info('Joat Win Rate vs. Random : %d' % (rwinrates))
                 log.info('ADAPTED/RANDOM WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
                 
                 log.info('PITTING ADAPTED AGAINST GREEDY POLICY')
                 arena = Arena('greedy',
                             lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
                 pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
-                gwinrates.append(float(nwins) / float(pwins + nwins + draws))
-                self.plot_win_rate(gwinrates, 'Greedy')
+                gwinrates = float(nwins) / float(pwins + nwins + draws)
+                log.info('Joat Win Rate vs. Greedy : %d' % (gwinrates))
                 log.info('ADAPTED/GREEDY WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
 
 

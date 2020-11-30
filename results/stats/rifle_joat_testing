@@ -1,0 +1,110 @@
+Last login: Tue Nov 24 14:36:18 on ttys002
+(base) rishishah@C02DF5YEMD6M ~ % ls
+Applications		Downloads		Pictures
+Creative Cloud Files	Library			Public
+Desktop			Movies			miniconda3
+Documents		Music
+(base) rishishah@C02DF5YEMD6M ~ % cd Documents/    
+(base) rishishah@C02DF5YEMD6M Documents % ls
+__pycache__		exercise2.ipynb		models
+data			google-cloud-sdk	util.py
+demo.ipynb		meta-minichess
+(base) rishishah@C02DF5YEMD6M Documents % cd meta-minichess 
+(base) rishishah@C02DF5YEMD6M meta-minichess % ls
+README.md			pretrained_models
+assets				results
+environment.yml			scripts
+games				setup.py
+learning			shah_vscode.code-workspace
+main.py				temp
+minichess
+(base) rishishah@C02DF5YEMD6M meta-minichess % conda activate mmc
+(mmc) rishishah@C02DF5YEMD6M meta-minichess % python -m scripts.meta_test --loading_path ~/Documents/meta-minichess/pretrained_models/pytorch/meta15.pth.tar --eval_on_baselines --games mallet
+2020-11-29 23:25:55 C02DF5YEMD6M.tld __main__[56410] INFO Not using CUDA.
+2020-11-29 23:25:56 C02DF5YEMD6M.tld __main__[56410] INFO Loading Minichess Variants...
+2020-11-29 23:25:56 C02DF5YEMD6M.tld __main__[56410] INFO Loading NNetWrapper...
+2020-11-29 23:25:56 C02DF5YEMD6M.tld __main__[56410] INFO Loading JOAT model "/Users/rishishah/Documents/meta-minichess/pretrained_models/pytorch/meta15.pth.tar"...
+2020-11-29 23:25:56 C02DF5YEMD6M.tld __main__[56410] INFO Loading JOAT Pitter...
+2020-11-29 23:25:56 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[56410] INFO Self-playing game MalletChessGame ...
+Self Play: 100%|████████████████████████████| 100/100 [1:02:58<00:00, 37.78s/it]
+2020-11-30 00:28:54 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[56410] WARNING Removing the oldest entry in trainExamples for game. len(trainExamplesHistory) = 1
+2020-11-30 00:28:55 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[56410] INFO Training/Adapting network...
+EPOCH ::: 1
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 2
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 3
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 4
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 5
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 6
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 7
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 8
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 9
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 10
+Training Net: 0it [00:00, ?it/s]
+2020-11-30 00:28:55 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[56410] INFO PITTING ADAPTED AGAINST ORIGINAL JOAT
+Arena.playGames MalletChessGame (1): 100%|████████| 5/5 [02:01<00:00, 24.34s/it]
+Arena.playGames MalletChessGame (2): 100%|████████| 5/5 [03:32<00:00, 42.46s/it]
+2020-11-30 00:34:30 C02DF5YEMD6M.tld matplotlib.legend[56410] WARNING No handles with labels found to put in legend.
+2020-11-30 00:34:30 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[56410] INFO NEW/PREV WINS : 1 / 7 ; DRAWS : 2
+Arena.playGames MalletChessGame (1): 100%|████████| 5/5 [01:20<00:00, 16.10s/it]
+Arena.playGames MalletChessGame (2): 100%|████████| 5/5 [01:14<00:00, 14.82s/it]
+2020-11-30 00:37:04 C02DF5YEMD6M.tld matplotlib.legend[56410] WARNING No handles with labels found to put in legend.
+Arena.playGames MalletChessGame (1): 100%|████████| 5/5 [00:35<00:00,  7.02s/it]
+Arena.playGames MalletChessGame (2): 100%|████████| 5/5 [01:20<00:00, 16.02s/it]
+2020-11-30 00:39:00 C02DF5YEMD6M.tld matplotlib.legend[56410] WARNING No handles with labels found to put in legend.
+Checkpoint Directory exists! 
+(mmc) rishishah@C02DF5YEMD6M meta-minichess % python -m scripts.meta_test --loading_path ~/Documents/meta-minichess/pretrained_models/pytorch/meta15.pth.tar --eval_on_baselines --games rifle
+2020-11-30 01:13:52 C02DF5YEMD6M.tld __main__[58444] INFO Not using CUDA.
+2020-11-30 01:13:53 C02DF5YEMD6M.tld __main__[58444] INFO Loading Minichess Variants...
+2020-11-30 01:13:53 C02DF5YEMD6M.tld __main__[58444] INFO Loading NNetWrapper...
+2020-11-30 01:13:53 C02DF5YEMD6M.tld __main__[58444] INFO Loading JOAT model "/Users/rishishah/Documents/meta-minichess/pretrained_models/pytorch/meta15.pth.tar"...
+2020-11-30 01:13:53 C02DF5YEMD6M.tld __main__[58444] INFO Loading JOAT Pitter...
+2020-11-30 01:13:53 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[58444] INFO Self-playing game RifleChessGame ...
+Self Play: 100%|██████████████████████████████| 100/100 [40:29<00:00, 24.29s/it]
+2020-11-30 01:54:23 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[58444] WARNING Removing the oldest entry in trainExamples for game. len(trainExamplesHistory) = 1
+2020-11-30 01:54:23 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[58444] INFO Training/Adapting network...
+EPOCH ::: 1
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 2
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 3
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 4
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 5
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 6
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 7
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 8
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 9
+Training Net: 0it [00:00, ?it/s]
+EPOCH ::: 10
+Training Net: 0it [00:00, ?it/s]
+2020-11-30 01:54:24 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[58444] INFO PITTING ADAPTED AGAINST ORIGINAL JOAT
+Arena.playGames RifleChessGame (1): 100%|█████████| 5/5 [01:06<00:00, 13.21s/it]
+Arena.playGames RifleChessGame (2): 100%|█████████| 5/5 [01:33<00:00, 18.72s/it]
+2020-11-30 01:57:03 C02DF5YEMD6M.tld matplotlib.legend[58444] WARNING No handles with labels found to put in legend.
+2020-11-30 01:57:03 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[58444] INFO ADAPTED/ORIGINAL WINS : 4 / 1 ; DRAWS : 5
+2020-11-30 01:57:03 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[58444] INFO PITTING ADAPTED AGAINST RANDOM POLICY
+Arena.playGames RifleChessGame (1): 100%|█████████| 5/5 [00:59<00:00, 11.88s/it]
+Arena.playGames RifleChessGame (2): 100%|█████████| 5/5 [01:28<00:00, 17.76s/it]
+2020-11-30 01:59:32 C02DF5YEMD6M.tld matplotlib.legend[58444] WARNING No handles with labels found to put in legend.
+2020-11-30 01:59:32 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[58444] INFO ADAPTED/RANDOM WINS : 4 / 5 ; DRAWS : 1
+2020-11-30 01:59:32 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[58444] INFO PITTING ADAPTED AGAINST GREEDY POLICY
+Arena.playGames RifleChessGame (1): 100%|█████████| 5/5 [00:45<00:00,  9.15s/it]
+Arena.playGames RifleChessGame (2): 100%|█████████| 5/5 [01:22<00:00, 16.49s/it]
+2020-11-30 02:01:40 C02DF5YEMD6M.tld matplotlib.legend[58444] WARNING No handles with labels found to put in legend.
+2020-11-30 02:01:40 C02DF5YEMD6M.tld learning.alpha_zero.undistributed.pitter[58444] INFO ADAPTED/GREEDY WINS : 0 / 10 ; DRAWS : 0
+Checkpoint Directory exists! 
+(mmc) rishishah@C02DF5YEMD6M meta-minichess % 
