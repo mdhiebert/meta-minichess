@@ -122,7 +122,7 @@ class JOATPitter():
                 # NB! the examples were collected using the model from the previous iteration, so (i-1)  
                 self.saveTrainExamples(game.__class__)
                 
-            log.info(f'Training network...')
+            log.info(f'Training/Adapting network...')
             # training new network
             joatmcts = MCTS(game, self.joat, self.args)
             
@@ -143,20 +143,24 @@ class JOATPitter():
             joatwinrates.append(float(nwins) / float(pwins + nwins + draws))
             self.plot_win_rate(joatwinrates, 'Original JOAT')
 
-            log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
+            log.info('ADAPTED/ORIGINAL WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
 
-            if self.args.evalOnBaselines:
+            if self.args['evalOnBaselines']:
+                log.info('PITTING ADAPTED AGAINST RANDOM POLICY')
                 arena = Arena('random',
                             lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
                 pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
                 rwinrates.append(float(nwins) / float(pwins + nwins + draws))
                 self.plot_win_rate(rwinrates, 'Random')
-
+                log.info('ADAPTED/RANDOM WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
+                
+                log.info('PITTING ADAPTED AGAINST GREEDY POLICY')
                 arena = Arena('greedy',
                             lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
                 pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
                 gwinrates.append(float(nwins) / float(pwins + nwins + draws))
                 self.plot_win_rate(gwinrates, 'Greedy')
+                log.info('ADAPTED/GREEDY WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
 
 
     def getCheckpointFile(self, game_class):
