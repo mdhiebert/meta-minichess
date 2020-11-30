@@ -1,6 +1,7 @@
 mcts_data/
 *.code-workspace
 .vscode
+*.examples
 
 temp/
 

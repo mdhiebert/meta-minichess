@@ -41,7 +41,7 @@ class NNetWrapper(NeuralNet):
         optimizer = optim.Adam(self.nnet.parameters())
 
         losses = []
-
+        
         for epoch in range(args['epochs']):
             print('EPOCH ::: ' + str(epoch + 1))
             self.nnet.train()

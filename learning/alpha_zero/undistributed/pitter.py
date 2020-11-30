@@ -35,7 +35,7 @@ class JOATPitter():
         self.adapt_joat = joat
         self.args = args
         self.mcts = None
-        # self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
+        self.trainExamplesHistory = {}  # examples of self-play {GameClass -> examples}
 
     def executeEpisode(self, game):
         """
@@ -94,31 +94,39 @@ class JOATPitter():
             joatwinrates = []
             rwinrates = []
             gwinrates = []
+            
+            if not self.args['skipSelfPlay']:
+                # bookkeeping
+                log.info(f'Self-playing game {type(game).__name__} ...')
 
-            # bookkeeping
-            log.info(f'Self-playing game {type(game).__name__} ...')
+                # run self play on game variante
+                variationTrainExamples = deque([], maxlen=self.args['maxlenOfQueue'])
 
-            # run self play on game variante
-            variationTrainExamples = deque([], maxlen=self.args['maxlenOfQueue'])
+                for _ in tqdm(range(self.args['numEps']), desc="Self Play"):
+                    self.mcts = MCTS(game, self.joat, self.args)  # reset search tree
+                    variationTrainExamples += self.executeEpisode(game)
 
-            for _ in tqdm(range(self.args['numEps']), desc="Self Play"):
-                self.mcts = MCTS(game, self.joat, self.args)  # reset search tree
-                variationTrainExamples += self.executeEpisode(game)
+                # shuffle examples before training
+                trainExamples = []
+                for e in variationTrainExamples:
+                    trainExamples.extend(e)
+                shuffle(trainExamples)
 
-            # backup history to a file
-            # NB! the examples were collected using the model from the previous iteration, so (i-1)  
-            self.saveTrainExamples(type(game).__name__)
+                self.trainExamplesHistory[game.__class__] = trainExamples
 
-            # shuffle examples before training
-            trainExamples = []
-            for e in variationTrainExamples:
-                trainExamples.extend(e)
-            shuffle(trainExamples)
+                if len(self.trainExamplesHistory[game.__class__]) > self.args['numItersForTrainExamplesHistory']:
+                    log.warning(
+                        f"Removing the oldest entry in trainExamples for game. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
 
+                # backup history to a file
+                # NB! the examples were collected using the model from the previous iteration, so (i-1)  
+                self.saveTrainExamples(game.__class__)
+                
+            log.info(f'Training network...')
             # training new network
             joatmcts = MCTS(game, self.joat, self.args)
             
-            pi_v_losses = self.adapt_joat.train(trainExamples)
+            pi_v_losses = self.adapt_joat.train(self.trainExamplesHistory)
             adapt_joatmcts = MCTS(game, self.adapt_joat, self.args)
 
             for pi,v in pi_v_losses:
@@ -151,19 +159,19 @@ class JOATPitter():
                 self.plot_win_rate(gwinrates, 'Greedy')
 
 
-    def getCheckpointFile(self, iteration):
-        return 'checkpoint_' + str(iteration) + '.pth.tar'
+    def getCheckpointFile(self, game_class):
+        return 'checkpoint_' + game_class.__name__ + '.pth.tar'
 
-    def saveTrainExamples(self, iteration):
+    def saveTrainExamples(self, game_class):
         folder = self.args['checkpoint']
         if not os.path.exists(folder):
             os.makedirs(folder)
-        filename = os.path.join(folder, self.getCheckpointFile(iteration) + ".examples")
+        filename = os.path.join(folder, self.getCheckpointFile(game_class) + ".examples")
         with open(filename, "wb+") as f:
-            Pickler(f).dump(self.trainExamplesHistory)
+            Pickler(f).dump(self.trainExamplesHistory[game_class])
         f.closed
 
-    def loadTrainExamples(self):
+    def loadTrainExamples(self, game_class):
         modelFile = os.path.join(self.args['load_folder_file'][0], self.args['load_folder_file'][1])
         examplesFile = modelFile + ".examples"
         if not os.path.isfile(examplesFile):
@@ -174,7 +182,7 @@ class JOATPitter():
         else:
             log.info("File with trainExamples found. Loading it...")
             with open(examplesFile, "rb") as f:
-                self.trainExamplesHistory = Unpickler(f).load()
+                self.trainExamplesHistory[game_class] = Unpickler(f).load()
             log.info('Loading done!')
 
             # examples based on the model were already collected (loaded)

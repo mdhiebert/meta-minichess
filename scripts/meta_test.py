@@ -47,6 +47,8 @@ if __name__ == "__main__": # for multiprocessing
 
     parser.add_argument('--dont_use_cuda', action='store_true', default=False, help='Force the system NOT to use CUDA, even if its available (default: False)')
 
+    parser.add_argument('--skip_self_play', action='store_true', default=False, help='Skip self-play to to load in training examples; if true, must be .examples path in same directory as loading_path per game in --games(default: False)')
+
     parser.add_argument('--debug', action='store_true', default=False)
 
     args = parser.parse_args()
@@ -105,7 +107,8 @@ if __name__ == "__main__": # for multiprocessing
         'checkpoint': './temp/',
         'load_model': not args.loading_path is None,
         'load_folder_file': ('/'.join(args.loading_path.split('/')[:-1]),args.loading_path.split('/')[-1]),
-        # 'numItersForTrainExamplesHistory': 20,
+        'numItersForTrainExamplesHistory': 100,
+        'skipSelfPlay': args.skip_self_play,
     })
 
     # set up games
@@ -148,6 +151,11 @@ if __name__ == "__main__": # for multiprocessing
 
         
     p = JOATPitter(games, joat, train_args)
+
+    if train_args['skipSelfPlay']:
+        log.info("Loading 'trainExamples' per game from files...")
+        for game in games:
+            p.loadTrainExamples(game.__class__)
 
     p.adapt()
 
