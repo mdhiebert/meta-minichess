@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import copy
 from collections import deque
 from pickle import Pickler, Unpickler
 from random import shuffle
@@ -10,8 +11,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-from learning.alpha_zero.undistributed.joat_arena import JOATArena as Arena
-from learning.alpha_zero.undistributed.mcts import MCTS
+from learning.alpha_zero.distributed.joat_arena import JOATArena as Arena
+from learning.alpha_zero.distributed.mcts import MCTS
+from learning.alpha_zero.distributed.utils import run_apply_async_multiprocessing
 
 log = logging.getLogger(__name__)
 
@@ -32,12 +34,11 @@ class JOATPitter():
     def __init__(self, games, joat, args):
         self.games = games
         self.joat = joat
-        self.adapt_joat = joat
         self.args = args
         self.mcts = None
         self.trainExamplesHistory = {}  # examples of self-play {GameClass -> examples}
 
-    def executeEpisode(self, game):
+    def executeEpisode(self, mcts, game, args):
         """
         This function executes one episode of self-play, starting with player 1.
         As the game is played, each turn is added as a training example to
@@ -53,25 +54,25 @@ class JOATPitter():
         """
         trainExamples = []
         board = game.getInitBoard()
-        self.curPlayer = 1
+        curPlayer = 1
         episodeStep = 0
 
         moves = 0
 
         while True:
             episodeStep += 1
-            canonicalBoard = game.getCanonicalForm(board, self.curPlayer)
+            canonicalBoard = game.getCanonicalForm(board, curPlayer)
             temp = int(episodeStep < self.args['tempThreshold'])
 
-            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
+            pi = mcts.getActionProb(canonicalBoard, temp=temp)
             sym = game.getSymmetries(canonicalBoard, pi)
             for b, p in sym:
-                trainExamples.append([b, self.curPlayer, p, None])
+                trainExamples.append([b, curPlayer, p, None])
 
             action = np.random.choice(len(pi), p=pi)
-            board, self.curPlayer = game.getNextState(board, self.curPlayer, action)
+            board, curPlayer = game.getNextState(board, curPlayer, action)
 
-            r = game.getGameEnded(board, self.curPlayer)
+            r = game.getGameEnded(board, curPlayer)
             
             moves += 1
 
@@ -79,7 +80,7 @@ class JOATPitter():
                 r = 1e-4
 
             if r != 0:
-                return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
+                return [(x[0], x[2], r * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
 
     def adapt(self):
         """
@@ -91,14 +92,13 @@ class JOATPitter():
 
         for game in self.games:
             losses = []
-            
-            if not self.args['skipSelfPlay']:
-                # bookkeeping
-                log.info(f'Self-playing game {type(game).__name__} ...')
             joatwinrates = []
             rwinrates = []
             gwinrates = []
 
+            adapt_joat = copy.deepcopy(self.joat)
+
+            trainExamples = []
             for _ in tqdm(range(self.args['adaptationIterations']), desc = 'Adapting'):
 
                 if not self.args['skipSelfPlay']:
@@ -108,21 +108,15 @@ class JOATPitter():
                     # run self play on game variante
                     variationTrainExamples = deque([], maxlen=self.args['maxlenOfQueue'])
 
-                    for _ in tqdm(range(self.args['numEps']), desc="Self Play"):
-                        self.mcts = MCTS(game, self.joat, self.args)  # reset search tree
-                        variationTrainExamples += self.executeEpisode(game)
-
+                    variationTrainExamples = run_apply_async_multiprocessing(self.executeEpisode, [(MCTS(game, self.joat, self.args), type(game)(), self.args.copy())] * self.args['numEps'], self.args['numWorkers'], desc='Self Play')
+                
                     # shuffle examples before training
-                    trainExamples = []
                     for e in variationTrainExamples:
                         trainExamples.extend(e)
                     shuffle(trainExamples)
 
                     self.trainExamplesHistory[game.__class__] = trainExamples
 
-                    if len(self.trainExamplesHistory[game.__class__]) > self.args['numItersForTrainExamplesHistory']:
-                        log.warning(
-                            f"Removing the oldest entry in trainExamples for game. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
 
                     # backup history to a file
                     # NB! the examples were collected using the model from the previous iteration, so (i-1)  
@@ -132,8 +126,7 @@ class JOATPitter():
                 # training new network
                 joatmcts = MCTS(game, self.joat, self.args)
                 
-                pi_v_losses = self.adapt_joat.train(self.trainExamplesHistory)
-                adapt_joatmcts = MCTS(game, self.adapt_joat, self.args)
+                pi_v_losses = adapt_joat.train(trainExamples)
 
                 for pi,v in pi_v_losses:
                     losses.append((pi, v, type(game).__name__))
@@ -143,30 +136,49 @@ class JOATPitter():
             # ARENA
 
             log.info('PITTING ADAPTED AGAINST ORIGINAL JOAT')
-            arena = Arena(lambda x: np.argmax(joatmcts.getActionProb(x, temp=0)),
-                        lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
-            pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
-            joatwinrate = float(nwins) / float(pwins + nwins + draws)
-            log.info('Joat Win Rate vs. Original JOAT : %d' % (joatwinrate))
+            arena = Arena()
+            pwins, nwins, draws = arena.playGames(self.joat, adapt_joat, self.args, [game])
+            joatwinrates.append(float(nwins) / float(pwins + nwins + draws))
+            self.plot_win_rate(joatwinrates, 'Original JOAT')
 
             log.info('ADAPTED/ORIGINAL WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
 
             if self.args['evalOnBaselines']:
+                log.info('PITTING ORIGINAL AGAINST RANDOM POLICY')
+                arena = Arena()
+                pwins, nwins, draws = arena.playGames('random', self.joat, self.args, [game])
+                total_games = pwins + nwins + draws
+                wr = float(nwins) / float(total_games)
+                dr = float(draws) / float(total_games)
+                lsr = float(pwins) / float(total_games)
+                log.info(f'ORIGINAL v RANDOM WIN/DRAW/LOSS RATE ::: {wr}/{dr}/{lsr}')
+
                 log.info('PITTING ADAPTED AGAINST RANDOM POLICY')
-                arena = Arena('random',
-                            lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
-                pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
-                rwinrates = float(nwins) / float(pwins + nwins + draws)
-                log.info('Joat Win Rate vs. Random : %d' % (rwinrates))
-                log.info('ADAPTED/RANDOM WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
-                
+                arena = Arena()
+                pwins, nwins, draws = arena.playGames('random', adapt_joat, self.args, [game])
+                total_games = pwins + nwins + draws
+                wr = float(nwins) / float(total_games)
+                dr = float(draws) / float(total_games)
+                lsr = float(pwins) / float(total_games)
+                log.info(f'ADAPTED v RANDOM WIN/DRAW/LOSS RATE ::: {wr}/{dr}/{lsr}')
+
+                log.info('PITTING ORIGINAL AGAINST GREEDY POLICY')
+                arena = Arena()
+                pwins, nwins, draws = arena.playGames('greedy', self.joat, self.args, [game])
+                total_games = pwins + nwins + draws
+                wr = float(nwins) / float(total_games)
+                dr = float(draws) / float(total_games)
+                lsr = float(pwins) / float(total_games)
+                log.info(f'ORIGINAL v GREEDY WIN/DRAW/LOSS RATE ::: {wr}/{dr}/{lsr}')
+
                 log.info('PITTING ADAPTED AGAINST GREEDY POLICY')
-                arena = Arena('greedy',
-                            lambda x: np.argmax(adapt_joatmcts.getActionProb(x, temp=0)), [game])
-                pwins, nwins, draws = arena.playGames(self.args['arenaComparePerGame'])
-                gwinrates = float(nwins) / float(pwins + nwins + draws)
-                log.info('Joat Win Rate vs. Greedy : %d' % (gwinrates))
-                log.info('ADAPTED/GREEDY WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
+                arena = Arena()
+                pwins, nwins, draws = arena.playGames('greedy', adapt_joat, self.args, [game])
+                total_games = pwins + nwins + draws
+                wr = float(nwins) / float(total_games)
+                dr = float(draws) / float(total_games)
+                lsr = float(pwins) / float(total_games)
+                log.info(f'ADAPTED v GREEDY WIN/DRAW/LOSS RATE ::: {wr}/{dr}/{lsr}')
 
 
     def getCheckpointFile(self, game_class):

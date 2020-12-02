@@ -23,7 +23,7 @@ if __name__ == "__main__": # for multiprocessing
 
     parser.add_argument('--mcts_sims', action='store', default='200', type=int, help='Number of MCTS simulations to perform per action.')
 
-    parser.add_argument('--arenapergame', action='store', default='10', type=int, help='The number of Arena Games to conduct per game variant. This number will be divided in half to give the model equal reps as both black and white. If this is 0, Arena will be skipped. (default: 10)')
+    parser.add_argument('--arenapergame', action='store', default='40', type=int, help='The number of Arena Games to conduct per game variant. This number will be divided in half to give the model equal reps as both black and white. If this is 0, Arena will be skipped. (default: 40)')
 
     parser.add_argument('--max_moves', action='store', default='75', type=int, help='The maximum number of moves permitted in a minichess game before declaring a draw (default: 75)')
 
@@ -40,6 +40,8 @@ if __name__ == "__main__": # for multiprocessing
     parser.add_argument('--batch_size', action='store', type=int, default=64, help='Batch size during adaptation.')
 
     parser.add_argument('--num_channels', action='store', type=int, default=512, help='Number of channels to use in the model during adaptation.')
+
+    parser.add_argument('--adaptation_iterations', action='store', type=int, default=1, help='Number of AlphaZero iterations to give a JOAT model to adapt.')
 
     parser.add_argument('--eval_on_baselines', action='store_true', default=False, help='If passed in, we will evaluate our model against random and greedy players and plot the win rates.')
     
@@ -76,7 +78,7 @@ if __name__ == "__main__": # for multiprocessing
 
     # Value Error logic
     if args.loading_path == None:
-        log.info('No JOAT model found; must be passed in to assess during testing')
+        log.warn('No JOAT model found; must be passed in to assess during testing')
         raise ValueError('No JOAT model found; must be passed in via --loading_path')
     if args.arenapergame < 1:
         log.info('Must have atleast one arena iteration')
@@ -109,6 +111,8 @@ if __name__ == "__main__": # for multiprocessing
         'load_folder_file': ('/'.join(args.loading_path.split('/')[:-1]),args.loading_path.split('/')[-1]),
         'numItersForTrainExamplesHistory': 100,
         'skipSelfPlay': args.skip_self_play,
+        
+        'adaptationIterations': args.adaptation_iterations
     })
 
     # set up games
@@ -130,7 +134,7 @@ if __name__ == "__main__": # for multiprocessing
         from learning.alpha_zero.distributed.joat_coach import JOATCoach
         from learning.alpha_zero.distributed.pytorch.NNet import NNetWrapper as nn
         from learning.alpha_zero.distributed.utils import *
-        # from learning.alpha_zero.distributed.pitter import JOATPitter
+        from learning.alpha_zero.distributed.pitter import JOATPitter
     else:
         from learning.alpha_zero.undistributed.joat_coach import JOATCoach
         from learning.alpha_zero.undistributed.pytorch.NNet import NNetWrapper as nn
