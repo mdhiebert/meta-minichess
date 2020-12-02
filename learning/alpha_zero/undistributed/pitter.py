@@ -94,45 +94,47 @@ class JOATPitter():
             joatwinrates = []
             rwinrates = []
             gwinrates = []
-            
-            if not self.args['skipSelfPlay']:
-                # bookkeeping
-                log.info(f'Self-playing game {type(game).__name__} ...')
 
-                # run self play on game variante
-                variationTrainExamples = deque([], maxlen=self.args['maxlenOfQueue'])
+            for _ in tqdm(range(self.args['adaptationIterations']), desc = 'Adapting'):
 
-                for _ in tqdm(range(self.args['numEps']), desc="Self Play"):
-                    self.mcts = MCTS(game, self.joat, self.args)  # reset search tree
-                    variationTrainExamples += self.executeEpisode(game)
+                if not self.args['skipSelfPlay']:
+                    # bookkeeping
+                    log.info(f'Self-playing game {type(game).__name__} ...')
 
-                # shuffle examples before training
-                trainExamples = []
-                for e in variationTrainExamples:
-                    trainExamples.extend(e)
-                shuffle(trainExamples)
+                    # run self play on game variante
+                    variationTrainExamples = deque([], maxlen=self.args['maxlenOfQueue'])
 
-                self.trainExamplesHistory[game.__class__] = trainExamples
+                    for _ in tqdm(range(self.args['numEps']), desc="Self Play"):
+                        self.mcts = MCTS(game, self.joat, self.args)  # reset search tree
+                        variationTrainExamples += self.executeEpisode(game)
 
-                if len(self.trainExamplesHistory[game.__class__]) > self.args['numItersForTrainExamplesHistory']:
-                    log.warning(
-                        f"Removing the oldest entry in trainExamples for game. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
+                    # shuffle examples before training
+                    trainExamples = []
+                    for e in variationTrainExamples:
+                        trainExamples.extend(e)
+                    shuffle(trainExamples)
 
-                # backup history to a file
-                # NB! the examples were collected using the model from the previous iteration, so (i-1)  
-                self.saveTrainExamples(game.__class__)
+                    self.trainExamplesHistory[game.__class__] = trainExamples
+
+                    if len(self.trainExamplesHistory[game.__class__]) > self.args['numItersForTrainExamplesHistory']:
+                        log.warning(
+                            f"Removing the oldest entry in trainExamples for game. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
+
+                    # backup history to a file
+                    # NB! the examples were collected using the model from the previous iteration, so (i-1)  
+                    self.saveTrainExamples(game.__class__)
+                    
+                log.info(f'Training/Adapting network...')
+                # training new network
+                joatmcts = MCTS(game, self.joat, self.args)
                 
-            log.info(f'Training/Adapting network...')
-            # training new network
-            joatmcts = MCTS(game, self.joat, self.args)
-            
-            pi_v_losses = self.adapt_joat.train(self.trainExamplesHistory)
-            adapt_joatmcts = MCTS(game, self.adapt_joat, self.args)
+                pi_v_losses = self.adapt_joat.train(self.trainExamplesHistory)
+                adapt_joatmcts = MCTS(game, self.adapt_joat, self.args)
 
-            for pi,v in pi_v_losses:
-                losses.append((pi, v, type(game).__name__))
+                for pi,v in pi_v_losses:
+                    losses.append((pi, v, type(game).__name__))
 
-            self.plot_current_progress(losses)
+                self.plot_current_progress(losses)
 
             # ARENA
 
