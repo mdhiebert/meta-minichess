@@ -218,27 +218,6 @@ optional arguments:
 
 ```
 
-## Pseudocode
-
-Michael
-1. AlphaZero working
-	- Ability to ingest MetaModel or None
-2. Implement Extinction
-3. Create Skeleton for training
-
-Rishi
-1. Look into Cloud Compute & Parallelization
-2. Figure out paper off of MetaModel
-
-Tag team skeleton and launch train.py
-
-
-1. Look into prebuilt AlphaZero (Michael)
-2. Look into Cloud Compute and parallelizing selfplay / arena play (Rishi)
-3. implement 1 more env (Michael)
-4. Meta Model (Rishi)
-5. model (Michael)
-
 ### Testing
 
 ```
