@@ -47,10 +47,12 @@ conda env create -f environment.yml
 conda activate mmc
 ```
 
+**NOTE: all scripts have been tested far more extensively with distributed than undistributed processes. mileage may vary if `--workers` is left at default. undistributed is a WIP.**
+
 Launch experiment to train a jack-of-all-trades minichess model with distributed computing:
 
 ```bash
-python -m scripts.train --workers=8 --games gardner mallet baby rifle dark atomic --eval_on_baselines --arenapergame=0
+python -m scripts.train --workers=6 --games gardner mallet baby rifle dark atomic --eval_on_baselines --arenapergame=0
 ```
 
 To use more workers, simply bump up the `--workers` value.
@@ -60,7 +62,7 @@ See progress in terminal and updated loss plots in `./policy_loss.png` and `./va
 To conduct testing on the JOAT model's ability to adapt to a specific game variant:
 
 ```bash
-python -m scripts.meta_test --loading_path pretrained_models/pytorch/meta15.pth.tar
+python -m scripts.meta_test --loading_path pretrained_models/pytorch/meta15.pth.tar --workers=6 --eval_on_baselines --games gardner atomic mallet baby dark rifle
 ```
 
 ## GCloud
