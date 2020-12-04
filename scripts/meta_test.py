@@ -49,7 +49,7 @@ if __name__ == "__main__": # for multiprocessing
 
     parser.add_argument('--dont_use_cuda', action='store_true', default=False, help='Force the system NOT to use CUDA, even if its available (default: False)')
 
-    parser.add_argument('--skip_self_play', action='store_true', default=False, help='Skip self-play to to load in training examples; if true, must be .examples path in same directory as loading_path per game in --games(default: False)')
+    parser.add_argument('--skip_self_play', action='store_true', default=False, help='Skip self-play to to load in training examples; if true, must be .examples path in same directory as loading_path per game in --games (default: False)')
 
     parser.add_argument('--debug', action='store_true', default=False)
 

@@ -12,6 +12,7 @@ See also: [minichess](https://github.com/mdhiebert/minichess) and [gym-minichess
 - [Scripts](#scripts)
   - [Train](#train)
   - [Test](#test)
+  - [Explore](#explore)
 - [Objective](#objective)
 - [Methodology](#methodology)
 - [Environment](#environment)
@@ -164,13 +165,14 @@ For more details on testing, refer to the help:
 ```bash
 $ python -m scripts.meta_test --help
 usage: meta_test.py [-h] [--loading_path LOADING_PATH] [--episodes EPISODES]
-                    [--arenapergame ARENAPERGAME] [--max_moves MAX_MOVES]
-                    [--workers WORKERS]
+                    [--mcts_sims MCTS_SIMS] [--arenapergame ARENAPERGAME]
+                    [--max_moves MAX_MOVES] [--workers WORKERS]
                     [--games {gardner,mallet,baby,rifle,dark,atomic} [{gardner,mallet,baby,rifle,dark,atomic} ...]]
                     [--learning_rate LEARNING_RATE] [--dropout DROPOUT]
                     [--epochs EPOCHS] [--batch_size BATCH_SIZE]
                     [--num_channels NUM_CHANNELS] [--eval_on_baselines]
-                    [--use_cuda] [--dont_use_cuda] [--debug]
+                    [--use_cuda] [--dont_use_cuda] [--skip_self_play]
+                    [--debug]
 
 Test a JOAT minichess model via n-shot adaptation.
 
@@ -180,6 +182,8 @@ optional arguments:
                         Path to the JOAT model weights.
   --episodes EPISODES   Number of episodes of self-play for adaptation og JOAT
                         (default: 100)
+  --mcts_sims MCTS_SIMS
+                        Number of MCTS simulations to perform per action.
   --arenapergame ARENAPERGAME
                         The number of Arena Games to conduct per game variant.
                         This number will be divided in half to give the model
@@ -210,30 +214,105 @@ optional arguments:
                         whether or not CUDA is available)
   --dont_use_cuda       Force the system NOT to use CUDA, even if its
                         available (default: False)
+  --skip_self_play      Skip self-play to to load in training examples; if
+                        true, must be .examples path in same directory as
+                        loading_path per game in --games (default: False)
   --debug
 
 ```
 
-## Pseudocode
+### Explore
 
-Michael
-1. AlphaZero working
-	- Ability to ingest MetaModel or None
-2. Implement Extinction
-3. Create Skeleton for training
+Exploration experiment to see search spaces of the MCTS for each game variant.
+Writes a JSON file in the following format:
+{
+  "GameVariant": {
+      "str_board_hash": int(count)
+    },
+    "MalletChessGame": {
+        "1": 6,
+        "7": 21
+    }
+}
 
-Rishi
-1. Look into Cloud Compute & Parallelization
-2. Figure out paper off of MetaModel
+```bash
+$ python -m scripts.explore_states --help
+usage: explore_states.py [-h] [--json_path JSON_PATH]
+                         [--loading_path LOADING_PATH]
+                         [--iterations ITERATIONS] [--episodes EPISODES]
+                         [--mcts_sims MCTS_SIMS] [--arenapergame ARENAPERGAME]
+                         [--max_moves MAX_MOVES]
+                         [--win_threshold WIN_THRESHOLD] [--workers WORKERS]
+                         [--games {gardner,mallet,baby,rifle,atomic} [{gardner,mallet,baby,rifle,atomic} ...]]
+                         [--probs PROBS [PROBS ...]]
+                         [--learning_rate LEARNING_RATE] [--dropout DROPOUT]
+                         [--epochs EPOCHS] [--batch_size BATCH_SIZE]
+                         [--num_channels NUM_CHANNELS]
+                         [--task_batch_size TASK_BATCH_SIZE] [--use_cuda]
+                         [--dont_use_cuda] [--debug]
 
-Tag team skeleton and launch train.py
+Explore the states visited during JOAT training. Not used to train actual
+model
 
+optional arguments:
+  -h, --help            show this help message and exit
+  --json_path JSON_PATH
+                        Path to where you want the json of visited states.
+  --loading_path LOADING_PATH
+                        Path to the learning model weights. Should not be set
+                        to explore state spaces from scratch!
+  --iterations ITERATIONS
+                        Number of full AlphaZero iterations to run for
+                        training (default: 500)
+  --episodes EPISODES   Number of episodes of self-play per iteration
+                        (default: 100)
+  --mcts_sims MCTS_SIMS
+                        Number of MCTS simulations to perform per action.
+  --arenapergame ARENAPERGAME
+                        The number of Arena Games to conduct per game variant
+                        per iteration. This number will be divided in half to
+                        give the model equal reps as both black and white. If
+                        this is 0, Arena will be skipped. (default: 10)
+  --max_moves MAX_MOVES
+                        The maximum number of moves permitted in a minichess
+                        game before declaring a draw (default: 200)
+  --win_threshold WIN_THRESHOLD
+                        The win threshold above which a new model must reach
+                        during arena-play to become the new best model
+                        (default: 0.6)
+  --workers WORKERS     The number of workers to use to process self- and
+                        arena-play. A value >1 will leverage multiprocessing.
+                        Non-distributed version of Explorer not available
+                        (default: 2)
+  --games {gardner,mallet,baby,rifle,atomic} [{gardner,mallet,baby,rifle,atomic} ...]
+                        The games to consider during training. (default: all
+                        variants)
+  --probs PROBS [PROBS ...]
+                        The probabilities of the games to consider during
+                        training. The ith probability corresponds to the ith
+                        game provided. If no value is provided, this defaults
+                        to a uniform distribution across the provided games.
+                        (default: uniform dist)
+  --learning_rate LEARNING_RATE
+                        The learning rate during training.
+  --dropout DROPOUT     Dropout rate during training.
+  --epochs EPOCHS       Number of epochs during training.
+  --batch_size BATCH_SIZE
+                        Batch size during training.
+  --num_channels NUM_CHANNELS
+                        Number of channels to use in the model during
+                        training.
+  --task_batch_size TASK_BATCH_SIZE
+                        The number of tasks to sample in a given metalearning
+                        iteration. Not used if len(games) <= 1. (default: 4)
+  --use_cuda            If passed, force the system to use CUDA. (default:
+                        whether or not CUDA is available)
+  --dont_use_cuda       Force the system NOT to use CUDA, even if its
+                        available (default: False)
+  --debug
 
-1. Look into prebuilt AlphaZero (Michael)
-2. Look into Cloud Compute and parallelizing selfplay / arena play (Rishi)
-3. implement 1 more env (Michael)
-4. Meta Model (Rishi)
-5. model (Michael)
+```
+
 
 ### Testing
 

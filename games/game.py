@@ -108,6 +108,6 @@ class Game():
 
         Returns:
             boardString: a quick conversion of board to a string format.
-                         Required by MCTS for hashing.
+                         Required by MCTS & Explorer for hashing.
         """
         pass
