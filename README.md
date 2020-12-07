@@ -2,6 +2,8 @@
 
 An environment to run meta-learning experiments on minichess games with varying rulesets. Class project for MIT's [6.883: Meta Learning](http://www.mit.edu/~idrori/metalearningmitfall2020.html).
 
+![State Exploration Script](assets/state_intersection_opt.gif)
+
 See also: [minichess](https://github.com/mdhiebert/minichess) and [gym-minichess](https://github.com/mdhiebert/gym-minichess).
 
 ## Contents
@@ -26,6 +28,7 @@ See also: [minichess](https://github.com/mdhiebert/minichess) and [gym-minichess
     - [Multi-Variant Training Architecture](#multi-variant-training-architecture)
     - [MetaFocus Training Architecture](#metafocus-training-architecture)
   - [MCTS](#mcts)
+- [Results](#results)
 - [Result Log](#result-log)
 - [Changelog](#changelog)
 - [References](#references)
@@ -224,150 +227,25 @@ optional arguments:
 ### Explore
 
 Exploration experiment to see search spaces of the MCTS for each game variant.
-Writes a JSON file in the following format:
-{
-  "GameVariant": {
-      "str_board_hash": int(count)
-    },
-    "MalletChessGame": {
-        "1": 6,
-        "7": 21
-    }
-}
-
 ```bash
-$ python -m scripts.explore_states --help
-usage: explore_states.py [-h] [--json_path JSON_PATH]
-                         [--loading_path LOADING_PATH]
-                         [--iterations ITERATIONS] [--episodes EPISODES]
-                         [--mcts_sims MCTS_SIMS] [--arenapergame ARENAPERGAME]
-                         [--max_moves MAX_MOVES]
-                         [--win_threshold WIN_THRESHOLD] [--workers WORKERS]
-                         [--games {gardner,mallet,baby,rifle,atomic} [{gardner,mallet,baby,rifle,atomic} ...]]
-                         [--probs PROBS [PROBS ...]]
-                         [--learning_rate LEARNING_RATE] [--dropout DROPOUT]
-                         [--epochs EPOCHS] [--batch_size BATCH_SIZE]
-                         [--num_channels NUM_CHANNELS]
-                         [--task_batch_size TASK_BATCH_SIZE] [--use_cuda]
-                         [--dont_use_cuda] [--debug]
-
-Explore the states visited during JOAT training. Not used to train actual
-model
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --json_path JSON_PATH
-                        Path to where you want the json of visited states.
-  --loading_path LOADING_PATH
-                        Path to the learning model weights. Should not be set
-                        to explore state spaces from scratch!
-  --iterations ITERATIONS
-                        Number of full AlphaZero iterations to run for
-                        training (default: 500)
-  --episodes EPISODES   Number of episodes of self-play per iteration
-                        (default: 100)
-  --mcts_sims MCTS_SIMS
-                        Number of MCTS simulations to perform per action.
-  --arenapergame ARENAPERGAME
-                        The number of Arena Games to conduct per game variant
-                        per iteration. This number will be divided in half to
-                        give the model equal reps as both black and white. If
-                        this is 0, Arena will be skipped. (default: 10)
-  --max_moves MAX_MOVES
-                        The maximum number of moves permitted in a minichess
-                        game before declaring a draw (default: 200)
-  --win_threshold WIN_THRESHOLD
-                        The win threshold above which a new model must reach
-                        during arena-play to become the new best model
-                        (default: 0.6)
-  --workers WORKERS     The number of workers to use to process self- and
-                        arena-play. A value >1 will leverage multiprocessing.
-                        Non-distributed version of Explorer not available
-                        (default: 2)
-  --games {gardner,mallet,baby,rifle,atomic} [{gardner,mallet,baby,rifle,atomic} ...]
-                        The games to consider during training. (default: all
-                        variants)
-  --probs PROBS [PROBS ...]
-                        The probabilities of the games to consider during
-                        training. The ith probability corresponds to the ith
-                        game provided. If no value is provided, this defaults
-                        to a uniform distribution across the provided games.
-                        (default: uniform dist)
-  --learning_rate LEARNING_RATE
-                        The learning rate during training.
-  --dropout DROPOUT     Dropout rate during training.
-  --epochs EPOCHS       Number of epochs during training.
-  --batch_size BATCH_SIZE
-                        Batch size during training.
-  --num_channels NUM_CHANNELS
-                        Number of channels to use in the model during
-                        training.
-  --task_batch_size TASK_BATCH_SIZE
-                        The number of tasks to sample in a given metalearning
-                        iteration. Not used if len(games) <= 1. (default: 4)
-  --use_cuda            If passed, force the system to use CUDA. (default:
-                        whether or not CUDA is available)
-  --dont_use_cuda       Force the system NOT to use CUDA, even if its
-                        available (default: False)
-  --debug
-
+$ python -m scripts.explore_states
+```
+Writes a JSON file in the following format:
+```json
+{
+  "str_board_hash": [
+    bool_for_gardner,
+    bool_for_baby,
+    bool_for_mallet,
+    bool_for_rifle,
+    bool_for_atomic
+  ],
+  ...
+}
 ```
 
 
-### Testing
-
-```
-
-
-## TRAINING
-model = Model()
-for n in NUM_ITERS: # 1000
-	sample g from [atomic, gardner, dark, rifle, extinction]:
-		run a full alphazero iteration on g with model
-
-## TESTING
-100x:
-sample g from [variations]: (same weight)
-	JOAT play random
-	JOAT play greedy
-	plot / log both of the results
-we will be satisfied if JOAT wins above some threshold of these games, 60%
-JOAT vs random, greedy 20 times given some game state
-
-## META TRAINING
-metamodel = MetaModel() # controls dropout
-
-JOAT model (no grad)
-
-Nx:
-sample g from [varitions]: (uniform)
-	meta = [JOAT + Dropout](https://stackoverflow.com/questions/41583540/custom-dropout-in-tensorflow)
-	JOAT x meta: same alphazero iteration. 
-
-	MetaModel:
-		outputprobs = [] # differentiable
-
-		r = random.rand()
-
-		binary_str = 0111000, outputprobs
-
-		USE binary_str, calculate backprop with outputprobs
-```
-
-## Eval Metrics
-
-Originally:
-
-Have a fixed model, and a model trained on oneshot, pit against each other, show that win rate is >50%
-
-Now:
-
-JOAT Model #1 - do not apply metamodel, no dropout
-JOAT Model #2 - we do apply
-
-JOAT1 vs JOAT2, evaluate wins
-
-JOAT1 and JOAT2 vs random, greedy, etc. show superiority
+Run this script to automatically launch a state-exploration experiment
 
 ## Objective
 
@@ -435,7 +313,19 @@ We thus had the following training architecture for learning on single variants:
  
 ![assets/svta_arch.png](assets/svta_arch.png)
  
-TODO
+Our inner loop architecture is composed of four major parts: self-play, game logic, arena-play, and the learning model.
+
+The game logic handles all non-player components of our setup. It has inherent knowledge of the legality of moves and values of game states. It accepts input from external inputs (such as a human player or a learning model) in the form of actions, which it translates to updated game state. These properties are not actively involved in the training process, per se, but are pulled at every state to inform and correct moves throughout.
+
+The learning model is a neural network comprised of four sequential convolutional blocks followed by four fully connected layers. All convolutional layers have size 3, stride 1. The first two layers have extra padding of 1. We BatchNormalize after each convolutional layer. They all have depth 512.
+
+The linear layers each have hidden size 1024 and dropout rate of 0.3. The third hidden layer maps our hidden vector to a vector with the size of the action space and applies log-softmax activation. This represents a distribution across all possible actions to take and is renormalized post-mask.
+
+The fourth linear layer maps the hidden vector to a value, with tanh activation. This represents the relative value of a state from [-1, 1].
+
+An MCTS operates alongside the learning model. At every game state, we create a new tree with the current game state as the root node. We then randomly walk through our tree of possible future game states until we arrive at a state that our MCTS model has not seen before. We select this to be our leaf node and extend one layer of depth beyond it. From this extended node, we simulate a game to completion. Based on the result of this simulation, we backpropagate through our path according to the upper confidence bound formula from AlphaZero. Over time, we explore more and more of the game space and develop a much more robust understanding of what is and is not a good move. We chose to allow the model 200 MCTS simulations for each move.
+
+In self play, our model plays itself to generate training examples, using MCTS to determine which action is most conducive to success. The model then trains on these examples to improve its own policy. In the arena, we pit these models against one another to determine which is most effective at achieving desirable outcomes. The end result is a model which is most "skillful" in the environment provided.
  
 #### Multi-Variant Training Architecture
  
@@ -479,6 +369,36 @@ In addition, we also tried to tackle this problem from a different angle, using 
 ![assets/mmvta_arch.png](assets/mmvta_arch.png)
  
 TODO
+
+## Results
+
+### Base Gardner Model
+
+![](results/gardner_extra_15/policy_loss.png)
+![](results/gardner_extra_15/value_loss.png)
+
+### Meta-Adaptation at ~25 Additional Training Iterations
+
+![](results/metatest/atomic/policy_loss.png)
+![](results/metatest/atomic/value_loss.png)
+![](results/metatest/baby/policy_loss.png)
+![](results/metatest/baby/value_loss.png)
+![](results/metatest/dark/policy_loss.png)
+![](results/metatest/dark/value_loss.png)
+![](results/metatest/gardner/policy_loss.png)
+![](results/metatest/gardner/value_loss.png)
+![](results/metatest/mallet/policy_loss.png)
+![](results/metatest/mallet/value_loss.png)
+![](results/metatest/rifle/policy_loss.png)
+![](results/metatest/rifle/value_loss.png)
+
+### Final Game Results
+
+![](assets/full_results.png)
+
+### Exploration Results
+
+![](assets/state_intersection_final.png)
 
 ## Result Log
  
