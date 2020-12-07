@@ -35,3 +35,15 @@ def run_apply_async_multiprocessing(func, argument_list, num_processes, desc='')
         result_list_tqdm.append(job.get())
 
     return result_list_tqdm
+
+def run_apply_async_multiprocessing_no_visual(func, argument_list, num_processes, desc=''):
+    '''https://leimao.github.io/blog/Python-tqdm-Multiprocessing/'''
+    pool = Pool(processes=num_processes)
+
+    jobs = [pool.apply_async(func=func, args=(*argument,)) if isinstance(argument, tuple) else pool.apply_async(func=func, args=(argument,)) for argument in argument_list]
+    pool.close()
+    result_list_tqdm = []
+    for job in jobs:
+        result_list_tqdm.append(job.get())
+
+    return result_list_tqdm

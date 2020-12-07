@@ -108,8 +108,10 @@ class Explorer():
         only if it wins >= updateThreshold fraction of games.
         """
 
-        for i in range(1, self.args['numIters'] + 1):
-
+        i = 0
+        while True:
+            i += 1
+            
             state_counts = {game.__class__.__name__: Counter() for game in self.games} 
 
             policies_prime = []
@@ -118,7 +120,7 @@ class Explorer():
             counter = 0
             
             # bookkeeping
-            log.info(f'Starting Meta-Iteration #{i} ...')
+            log.info(f'Starting Exploration Iteration #{i} ...')
 
             # for task in tasks...
             for _ in range(self.args['taskBatchSize']):
